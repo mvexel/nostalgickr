@@ -26,10 +26,15 @@ async def get_public_photos():
                 "api_key": FLICKR_API_KEY,
                 "format": "json",
                 "nojsoncallback": 1,
-                "per_page": 20
+                "per_page": 20,
+                "extras": "url_q"  # Ensure we get the thumbnail URL
             }
         )
-        return response.json()
+        data = response.json()
+        # Ensure we have valid photo data
+        if 'photos' in data and 'photo' in data['photos']:
+            return data
+        return {"photos": {"photo": []}}  # Return empty array if no photos
 
 @app.get("/api/user_photos")
 async def get_user_photos(user_id: str):

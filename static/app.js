@@ -12,18 +12,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Simple login simulation
-    authStatus.addEventListener('click', () => {
+    authStatus.addEventListener('click', (e) => {
+        e.preventDefault();
         if (!userId) {
             const testUserId = '123456789@N00'; // Example Flickr user ID
             localStorage.setItem('flickrUserId', testUserId);
-            authStatus.textContent = `Logged in as user ${testUserId}`;
+            authStatus.innerHTML = `<a href="#">Logged in as user ${testUserId}</a>`;
             loadUserPhotos(testUserId);
         } else {
             localStorage.removeItem('flickrUserId');
-            authStatus.textContent = 'Not logged in';
+            authStatus.innerHTML = '<a href="#">Log in to Flickr</a>';
             loadPublicPhotos();
         }
     });
+
+    // Load photos initially
+    if (!userId) {
+        await loadPublicPhotos();
+    }
 });
 
 async function loadPublicPhotos() {
