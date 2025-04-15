@@ -1,34 +1,10 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    // Check if we have a stored user ID (simulating login)
-    const userId = localStorage.getItem('flickrUserId');
-    const authStatus = document.getElementById('auth-status');
-    
-    if (userId) {
-        authStatus.textContent = `Logged in as user ${userId}`;
-        loadUserPhotos(userId);
+    // Check if we're logged in by looking for user photos container
+    const photosContainer = document.getElementById('photos-container');
+    if (photosContainer.dataset.userId) {
+        loadUserPhotos(photosContainer.dataset.userId);
     } else {
-        authStatus.textContent = 'Not logged in';
         loadPublicPhotos();
-    }
-
-    // Simple login simulation
-    authStatus.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (!userId) {
-            const testUserId = '123456789@N00'; // Example Flickr user ID
-            localStorage.setItem('flickrUserId', testUserId);
-            authStatus.innerHTML = `<a href="#">Logged in as user ${testUserId}</a>`;
-            loadUserPhotos(testUserId);
-        } else {
-            localStorage.removeItem('flickrUserId');
-            authStatus.innerHTML = '<a href="#">Log in to Flickr</a>';
-            loadPublicPhotos();
-        }
-    });
-
-    // Load photos initially
-    if (!userId) {
-        await loadPublicPhotos();
     }
 });
 
