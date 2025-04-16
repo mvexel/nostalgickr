@@ -75,10 +75,13 @@ h1 {
 }
 .photo-details {
     min-height: 1.5em;
-    margin-top: 0.2em;
+    margin-top: 0.5em;
     font-size: 0.91em;
     color: #444;
     word-break: break-word;
+    padding: 4px 10px;
+    margin-right: 6px;
+    margin-bottom: 4px;
 }
 
 .photo-list img {

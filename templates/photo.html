@@ -4,8 +4,8 @@
 {% block nav_extra %}
   <a href="javascript:history.back();">Back to stream</a>
 {% endblock %}
-
 {% block content %}
+  {{ image_url }}
   <div class="photo-detail-page">
     <h2>{{ photo.title._content if photo.title and photo.title._content else 'Untitled' }}</h2>
     <img src="{{ image_url or photo.url_l or photo.url_q or photo.url_m }}" alt="{{ photo.title._content if photo.title and photo.title._content else 'Photo' }}" style="max-width: 100%; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 1em;">

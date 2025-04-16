@@ -1,35 +1,19 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Old Style Flickr</title>
-    <link rel="stylesheet" href="/static/style.css">
-    <script src="/static/main.js" defer></script>
-</head>
-<body>
-  <div id="container">
-    <header>
-      <h1>
-        <span style="color: #0063dc;">flick</span><span style="color: #ff0084;">r</span>
-      </h1>
-      <nav>
-        <a href="/">Home</a>
-      </nav>
-    </header>
-    <hr>
+{% extends "base.html" %}
 
 {% block nav_extra %}
-  <form method="get" action="/">    
-    <label for="privacy">Show:</label>
-    <select name="privacy" id="privacy" onchange="this.form.submit()">
-      <option value="public" {% if privacy == 'public' %}selected{% endif %}>Public</option>
-      <option value="friends" {% if privacy == 'friends' %}selected{% endif %}>Friends</option>
-      <option value="family" {% if privacy == 'family' %}selected{% endif %}>Family</option>
-      <option value="friendsfamily" {% if privacy == 'friendsfamily' %}selected{% endif %}>Friends & Family</option>
-      <option value="private" {% if privacy == 'private' %}selected{% endif %}>Private (all)</option>
-    </select>
-    <input type="hidden" name="page" value="{{ page }}">
+  {% if logged_in %}
+    <form method="get" action="/">    
+      <label for="privacy">Show:</label>
+      <select name="privacy" id="privacy" onchange="this.form.submit()">
+        <option value="public" {% if privacy == 'public' %}selected{% endif %}>Public</option>
+        <option value="friends" {% if privacy == 'friends' %}selected{% endif %}>Friends</option>
+        <option value="family" {% if privacy == 'family' %}selected{% endif %}>Family</option>
+        <option value="friendsfamily" {% if privacy == 'friendsfamily' %}selected{% endif %}>Friends & Family</option>
+        <option value="private" {% if privacy == 'private' %}selected{% endif %}>Private (all)</option>
+      </select>
+      <input type="hidden" name="page" value="{{ page }}">
     </form>
+  {% endif %}
 {% endblock %}
 
 {% block content %}
@@ -67,3 +51,4 @@
     {% endif %}
   </div>
 {% endblock %}
+

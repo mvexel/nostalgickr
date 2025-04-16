@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const observer = new window.IntersectionObserver((entries, obs) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
+        console.log('Intersecting:', entry.target);
         const detailsDiv = entry.target;
         const photoId = detailsDiv.id.replace('details-', '');
         if (loaded.has(photoId)) return;

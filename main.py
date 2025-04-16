@@ -160,10 +160,12 @@ def index(request: Request, page: int = 1, privacy: str = Query("public", enum=[
         "page": page,
         "privacy": privacy,
     })
+    print('[DEBUG index] user_display_name:', context.get('user_display_name'))
     return templates.TemplateResponse("index.html", context)
 
 @app.get("/photo/{photo_id}", response_class=HTMLResponse)
 def photo_page(request: Request, photo_id: str):
+    logged_in = request.session.get("oauth_token") is not None
     params = {
         "method": "flickr.photos.getInfo",
         "photo_id": photo_id,
@@ -171,7 +173,7 @@ def photo_page(request: Request, photo_id: str):
         "nojsoncallback": 1,
         "extras": "url_l,url_q,url_m,date_upload,date_taken,description,owner_name,title"
     }
-    if request.session.get("oauth_token") and request.session.get("oauth_token_secret"):
+    if logged_in:
         oauth = get_oauth_session(request)
         resp = oauth.get("https://api.flickr.com/services/rest", params=params)
     else:
@@ -181,7 +183,41 @@ def photo_page(request: Request, photo_id: str):
     data = resp.json().get("photo", {})
     tags = [t["_content"] for t in data.get("tags", {}).get("tag", [])]
     data["tags"] = tags
-    context = build_template_context(request, {"photo": data})
+    print('[DEBUG photo_page] data:', data)
+    def get_best_image_url(photo_id, logged_in, request):
+        sizes_params = {
+            "method": "flickr.photos.getSizes",
+            "photo_id": photo_id,
+            "format": "json",
+            "nojsoncallback": 1,
+            "api_key": FLICKR_API_KEY
+        }
+        if logged_in:
+            oauth = get_oauth_session(request)
+            sizes_resp = oauth.get("https://api.flickr.com/services/rest", params=sizes_params)
+        else:
+            sizes_resp = httpx.get("https://api.flickr.com/services/rest", params=sizes_params)
+        image_url = None
+        if sizes_resp.status_code == 200:
+            sizes_data = sizes_resp.json().get("sizes", {}).get("size", [])
+            preferred = ["Original", "Large", "Medium 800", "Medium 640", "Medium", "Small"]
+            for label in preferred:
+                for size in sizes_data:
+                    if size.get("label") == label:
+                        image_url = size.get("source")
+                        break
+                if image_url:
+                    break
+            if not image_url and sizes_data:
+                image_url = sizes_data[-1].get("source")
+        return image_url
+
+    image_url = get_best_image_url(photo_id, logged_in, request)
+    context = build_template_context(request, {
+        "photo": data,
+        "image_url": image_url
+    })
+    print('[DEBUG photo_page] user_display_name:', context.get('user_display_name'))
     return templates.TemplateResponse("photo.html", context)
 
 @app.get("/photo_details/{photo_id}")
