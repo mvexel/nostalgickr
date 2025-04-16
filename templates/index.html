@@ -1,54 +1,52 @@
 {% extends "base.html" %}
 
 {% block nav_extra %}
-  {% if logged_in %}
-    <form method="get" action="/">    
-      <label for="privacy">Show:</label>
-      <select name="privacy" id="privacy" onchange="this.form.submit()">
-        <option value="public" {% if privacy == 'public' %}selected{% endif %}>Public</option>
-        <option value="friends" {% if privacy == 'friends' %}selected{% endif %}>Friends</option>
-        <option value="family" {% if privacy == 'family' %}selected{% endif %}>Family</option>
-        <option value="friendsfamily" {% if privacy == 'friendsfamily' %}selected{% endif %}>Friends & Family</option>
-        <option value="private" {% if privacy == 'private' %}selected{% endif %}>Private (all)</option>
-      </select>
-      <input type="hidden" name="page" value="{{ page }}">
-    </form>
-  {% endif %}
+{% if logged_in %}
+<form method="get" action="/">
+  <label for="privacy">Show:</label>
+  <select name="privacy" id="privacy" onchange="this.form.submit()">
+    <option value="public" {% if privacy=='public' %}selected{% endif %}>Public</option>
+    <option value="friends" {% if privacy=='friends' %}selected{% endif %}>Friends</option>
+    <option value="family" {% if privacy=='family' %}selected{% endif %}>Family</option>
+    <option value="friendsfamily" {% if privacy=='friendsfamily' %}selected{% endif %}>Friends & Family</option>
+    <option value="private" {% if privacy=='private' %}selected{% endif %}>Private (all)</option>
+  </select>
+  <input type="hidden" name="page" value="{{ page }}">
+</form>
+{% endif %}
 {% endblock %}
 
 {% block content %}
-  <h2>Photo Stream</h2>
-  <ul class="photo-list">
-    {% for photo in photos %}
-    <li class="photo-row">
-      {% if photo.url_q %}
-        <a href="/photo/{{ photo.id }}"><img src="{{ photo.url_q }}" alt="{{ photo.title }}"></a>
+<h2>Photo Stream</h2>
+<ul class="photo-list">
+  {% for photo in photos %}
+  <li class="photo-row">
+    {% if photo.url_q %}
+    <a href="/photo/{{ photo.id }}"><img src="{{ photo.url_q }}" alt="{{ photo.title }}"></a>
+    {% endif %}
+    <div class="photo-main">
+      <div class="photo-title"><a href="/photo/{{ photo.id }}">{{ photo.title }}</a></div>
+      {% if photo.description and photo.description._content %}
+      <div class="photo-desc">{{ photo.description._content }}</div>
       {% endif %}
-      <div class="photo-main">
-        <div class="photo-title"><a href="/photo/{{ photo.id }}">{{ photo.title }}</a></div>
-        {% if photo.description and photo.description._content %}
-          <div class="photo-desc">{{ photo.description._content }}</div>
-        {% endif %}
-        <div class="photo-meta">
-          <span>By <strong>{{ photo.ownername or photo.owner_name }}</strong></span><br>
-          <span>Date uploaded: {{ photo.dateupload | int | datetimeformat }}</span><br>
-          <span>Date taken: {{ photo.datetaken | datetimeformat }}</span>
-        </div>
+      <div class="photo-meta">
+        <span>By <strong>{{ photo.ownername or photo.owner_name }}</strong></span><br>
+        <span>Date uploaded: {{ photo.dateupload | int | datetimeformat }}</span><br>
+        <span>Date taken: {{ photo.datetaken | datetimeformat }}</span>
       </div>
-      <div class="photo-extra">
-        <div class="photo-details" id="details-{{ photo.id }}"></div>
-      </div>
-    </li>
-    {% endfor %}
-  </ul>
-  <div class="pagination">
-    {% if page > 1 %}
-      <a href="/?page={{ page - 1 }}{% if privacy %}&privacy={{ privacy }}{% endif %}">&laquo; Prev</a>
+    </div>
+    <div class="photo-extra">
+      <div class="photo-details" id="details-{{ photo.id }}"></div>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+<div class="pagination">
+  {% if page > 1 %}
+  <a href="/?page={{ page - 1 }}{% if privacy %}&privacy={{ privacy }}{% endif %}">&laquo; Prev</a>
+  {% endif %}
+  <span>Page {{ page }} of {{ pages }}</span>
+  {% if page < pages %} <a href="/?page={{ page + 1 }}{% if privacy %}&privacy={{ privacy }}{% endif %}">Next &raquo;</a>
     {% endif %}
-    <span>Page {{ page }} of {{ pages }}</span>
-    {% if page < pages %}
-      <a href="/?page={{ page + 1 }}{% if privacy %}&privacy={{ privacy }}{% endif %}">Next &raquo;</a>
-    {% endif %}
-  </div>
+</div>
 {% endblock %}
-

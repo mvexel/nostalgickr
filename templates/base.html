@@ -17,11 +17,11 @@
         <a href="/">Home</a>
         {% block nav_extra %}{% endblock %}
         {% if user_display_name %}
-          <span style="margin-left:2em; color:#222;">
+        <span style="margin-left:2em; color:#222;">
             You are {% if user_display_name._content is defined %}{{ user_display_name._content }}{% else %}{{ user_display_name }}{% endif %}
           </span>
-          <form action="/logout" method="get" style="display:inline; margin-left:1em;">
-            <button type="submit">Log Out</button>
+        <form action="/logout" method="get" style="display:inline; margin-left:1em;">
+          <button type="submit">Log Out</button>
         </form>
         {% else %}
         <form action="/login" method="get" style="display:inline; margin-left:1em;">
