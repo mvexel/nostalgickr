@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ photo.title._content if photo.title and photo.title._content else 'Untitled' }} | Old Style Flickr{% endblock %}
+
+{% block nav_extra %}
+  <a href="javascript:history.back();">Back to stream</a>
+{% endblock %}
+
+{% block content %}
+  <div class="photo-detail-page">
+    <h2>{{ photo.title._content if photo.title and photo.title._content else 'Untitled' }}</h2>
+    <img src="{{ image_url or photo.url_l or photo.url_q or photo.url_m }}" alt="{{ photo.title._content if photo.title and photo.title._content else 'Photo' }}" style="max-width: 100%; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 1em;">
+    <div class="photo-meta">
+      <strong>By:</strong> {{ photo.owner.realname or photo.owner.username if photo.owner else 'Unknown' }}<br>
+      <strong>Date uploaded:</strong> {% if photo.dates and photo.dates.posted %}{{ photo.dates.posted | int | datetimeformat }}{% else %}N/A{% endif %}<br>
+      <strong>Date taken:</strong> {% if photo.dates and photo.dates.taken %}{{ photo.dates.taken | datetimeformat }}{% else %}N/A{% endif %}<br>
+      <strong>Views:</strong> {{ photo.views or 'N/A' }}<br>
+      <strong>Comments:</strong> {% if photo.comments and photo.comments._content is defined %}{{ photo.comments._content }}{% else %}0{% endif %}<br>
+      <strong>Tags:</strong> {% if photo.tags %}{{ photo.tags|join(', ') }}{% else %}None{% endif %}<br>
+    </div>
+    {% if photo.description and photo.description._content %}
+      <div class="photo-desc" style="margin-top:1em;">{{ photo.description._content }}</div>
+    {% endif %}
+  </div>
+{% endblock %}

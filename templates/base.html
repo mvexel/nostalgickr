@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}Old Style Flickr{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+  <div id="container">
+    <header>
+      <h1>
+        <span style="color: #0063dc;">flick</span><span style="color: #ff0084;">r</span>
+      </h1>
+      <nav>
+        {{logged_in}}
+        <a href="/">Home</a>
+        {% block nav_extra %}{% endblock %}
+        {% if user_display_name %}
+          <span style="margin-left:2em; color:#222;">
+            You are {% if user_display_name._content is defined %}{{ user_display_name._content }}{% else %}{{
+            user_display_name }}{% endif %}
+          </span>
+          <form action="/logout" method="get" style="display:inline; margin-left:1em;">
+            <button type="submit">Log Out</button>
+        </form>
+        {% else %}
+        <form action="/login" method="get" style="display:inline; margin-left:1em;">
+          <button type="submit">Log In with Flickr</button>
+        </form>
+        {% endif %}
+      </nav>
+    </header>
+    <hr>
+    {% block content %}{% endblock %}
+    <footer style="margin-top:2em; color:#888; font-size:0.95em;">
+      <hr>
+      <div>Old Style Flickr &copy; {{ now.year }}</div>
+    </footer>
+  </div>
+</body>
+
+</html>
