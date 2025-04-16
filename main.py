@@ -184,7 +184,7 @@ def photo_page(request: Request, photo_id: str):
     tags = [t["_content"] for t in data.get("tags", {}).get("tag", [])]
     data["tags"] = tags
     print('[DEBUG photo_page] data:', data)
-    def get_best_image_url(photo_id, logged_in, request):
+    def get_image_urls(photo_id, logged_in, request):
         sizes_params = {
             "method": "flickr.photos.getSizes",
             "photo_id": photo_id,
@@ -197,25 +197,24 @@ def photo_page(request: Request, photo_id: str):
             sizes_resp = oauth.get("https://api.flickr.com/services/rest", params=sizes_params)
         else:
             sizes_resp = httpx.get("https://api.flickr.com/services/rest", params=sizes_params)
-        image_url = None
+        urls = {}
         if sizes_resp.status_code == 200:
             sizes_data = sizes_resp.json().get("sizes", {}).get("size", [])
-            preferred = ["Original", "Large", "Medium 800", "Medium 640", "Medium", "Small"]
-            for label in preferred:
-                for size in sizes_data:
-                    if size.get("label") == label:
-                        image_url = size.get("source")
-                        break
-                if image_url:
-                    break
-            if not image_url and sizes_data:
-                image_url = sizes_data[-1].get("source")
-        return image_url
+            for size in sizes_data:
+                label = size.get("label")
+                url = size.get("source")
+                if label and url:
+                    urls[label] = url
+        # Order by increasing quality for progressive loading
+        order = ["Thumbnail", "Small", "Small 320", "Medium", "Medium 640", "Medium 800", "Large", "Original"]
+        image_urls = [urls[label] for label in order if label in urls]
+        return image_urls
 
-    image_url = get_best_image_url(photo_id, logged_in, request)
+    image_urls = get_image_urls(photo_id, logged_in, request)
     context = build_template_context(request, {
         "photo": data,
-        "image_url": image_url
+        "image_urls": image_urls,
+        "image_url": image_urls[-1] if image_urls else None
     })
     print('[DEBUG photo_page] user_display_name:', context.get('user_display_name'))
     return templates.TemplateResponse("photo.html", context)
