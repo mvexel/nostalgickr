@@ -10,7 +10,11 @@
 </div>
 <script>
   // Progressive image loading
-  const imageUrls = {{ image_urls| tojson | safe }};
+  const imageUrls = {{ image_urls|tojson|safe }};
+  // Ensure imageUrls is always an array
+  if (!Array.isArray(imageUrls)) {
+    imageUrls = [imageUrls];
+  }
   const img = document.getElementById('progressive-photo');
   if (imageUrls.length > 1) {
     let current = 0;
@@ -54,7 +58,7 @@
     <strong>Tags:</strong> {% if photo.tags %}{{ photo.tags|join(', ') }}{% else %}None{% endif %}<br>
   </div>
   {% if photo.description and photo.description._content %}
-  <div class="photo-desc" style="margin-top:1em;">{{ photo.description._content }}</div>
+  <div class="photo-desc" style="margin-top:1em;">{{ photo.description._content | replace('\n', '<br>') | safe }}</div>
   {% endif %}
 </div>
 {% endblock %}

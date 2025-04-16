@@ -27,7 +27,7 @@
     <div class="photo-main">
       <div class="photo-title"><a href="/photo/{{ photo.id }}">{{ photo.title }}</a></div>
       {% if photo.description and photo.description._content %}
-      <div class="photo-desc">{{ photo.description._content }}</div>
+      <div class="photo-desc">{{ photo.description._content | replace('\n', '<br>') | safe }}</div>
       {% endif %}
       <div class="photo-meta">
         <span>By <strong>{{ photo.ownername or photo.owner_name }}</strong></span><br>
