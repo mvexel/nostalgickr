@@ -1,3 +1,46 @@
-.aider*
-.env
+# Python
 __pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+*.egg
+
+# Virtualenv
+.venv/
+venv/
+ENV/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Env and secrets
+.env
+
+# Node
+node_modules/
+
+# Logs
+*.log
+
+# Compiled JS/CSS (if built)
+dist/
+build/
+
+# Misc
+*.bak
+*.tmp
+
+# Ignore old/unused scripts
+app.py
+hello.py
+static/app.js
+
+# Project config
+.python-version
+pyproject.toml
