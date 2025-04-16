@@ -6,12 +6,16 @@ body {
     color: #222;
 }
 
+img {
+    border: 1px solid #eee;
+}
+
 #container {
     max-width: 760px;
     margin: 32px auto 32px auto;
     background: #fff;
     border: 1px solid #ccc;
-    border-radius: 8px;
+    /* border-radius: 8px; */
     box-shadow: 0 2px 8px rgba(0,0,0,0.03);
     padding: 0 32px 32px 32px;
 }
@@ -90,7 +94,7 @@ h1 {
     object-fit: cover;
     flex-shrink: 0;
     border: 1px solid #ccc;
-    border-radius: 4px;
+    /* border-radius: 4px; */
     background: #eee;
 }
 .photo-title {
@@ -121,7 +125,7 @@ form {
 }
 select, button {
     font-size: 1em;
-    border-radius: 4px;
+    /* border-radius: 4px; */
     border: 1px solid #0063dc;
     background: #f7faff;
     color: #0063dc;
