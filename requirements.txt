@@ -5,3 +5,5 @@ python-multipart
 Jinja2
 starlette
 itsdangerous
+redis
+httpx
