@@ -145,6 +145,9 @@ CALLBACK_URL = config(
     "CALLBACK_URL", cast=str, default="http://localhost:8000/callback"
 )
 REDIS_URL = config("REDIS_URL", cast=str, default="redis://redis:6379/0")
+REDIS_PHOTO_DETAILS_CACHE_TTL = config(
+    "REDIS_PHOTO_DETAILS_CACHE_TTL", cast=int, default=172800
+)
 REDIS_FRIENDS_CACHE_TTL = config(
     "REDIS_FRIENDS_CACHE_TTL", cast=int, default=60 * 60 * 2
 )
@@ -245,8 +248,8 @@ async def photo_details(request: Request, photo_id: str):
     comments = data.get("comments", {}).get("_content")
     description = data.get("description", {}).get("_content")
     result = {"tags": tags, "views": views, "comments": comments, "description": description}
-    # Cache the result for 5 minutes
-    await redis_client.set(cache_key, json.dumps(result), ex=300)
+    # Cache the result for 2 days
+    await redis_client.set(cache_key, json.dumps(result), ex=REDIS_PHOTO_DETAILS_CACHE_TTL)
     resp = JSONResponse(result)
     resp.set_cookie(SESSION_COOKIE, session_id, httponly=True)
     return resp
@@ -437,7 +440,7 @@ async def friend_latest_photo(request: Request, nsid: str):
             resp.set_cookie(SESSION_COOKIE, session_id, httponly=True)
             return resp
         await redis_client.set(
-            cache_key, json.dumps({"error": "No photo found"}), ex=120
+            cache_key, json.dumps({"error": "No photo found"}), ex=REDIS_FRIENDS_CACHE_TTL
         )
         resp = JSONResponse({"error": "No photo found"}, status_code=404)
         resp.set_cookie(SESSION_COOKIE, session_id, httponly=True)
@@ -495,7 +498,7 @@ async def friend_latest_photos(request: Request, nsids: list = Body(...)):
                 await redis_client.set(
                     f"friend_latest_photo:{nsid}",
                     json.dumps({"error": "No photo found"}),
-                    ex=120,
+                    ex=REDIS_FRIENDS_CACHE_TTL,
                 )
                 return nsid, {"error": "No photo found"}
 
