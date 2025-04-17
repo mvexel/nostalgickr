@@ -31,8 +31,8 @@
       {% endif %}
       <div class="photo-meta">
         <span>By <strong>{{ photo.ownername or photo.owner_name }}</strong></span><br>
-        <span>Date uploaded: {{ photo.dateupload | int | datetimeformat }}</span><br>
-        <span>Date taken: {{ photo.datetaken | datetimeformat }}</span>
+        <span>Uploaded: {{ photo.dateupload | int | datetimeformat }}</span><br>
+        <span>Taken: {{ photo.datetaken | datetimeformat }}</span>
       </div>
     </div>
     <div class="photo-extra">

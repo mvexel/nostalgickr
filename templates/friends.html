@@ -114,8 +114,8 @@
       html += `<div class='photo-title'><a href='/photo/${photo.id}'>${photo.title || '(Untitled)'}</a></div>`;
       html += `<div class='photo-meta'>`;
       html += `<span>Friend: <strong>${photo.friend.realname || photo.friend.username || photo.friend.nsid}</strong></span><br>`;
-      html += `<span>Date uploaded: ${photo.dateupload ? datetimeformat(photo.dateupload) : 'N/A'}</span><br>`;
-      html += `<span>Date taken: ${photo.datetaken ? datetimeformat(photo.datetaken) : 'N/A'}</span>`;
+      html += `<span>Uploaded: ${photo.dateupload ? datetimeformat(photo.dateupload) : 'N/A'}</span><br>`;
+      html += `<span>Taken: ${photo.datetaken ? datetimeformat(photo.datetaken) : 'N/A'}</span>`;
       html += `</div></div>`;
       html += `<div class='photo-extra'><div class='photo-details' id='details-${photo.id}'></div></div>`;
       li.innerHTML = html;
