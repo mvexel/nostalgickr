@@ -211,6 +211,13 @@ async def index(
 async def photo_details(request: Request, photo_id: str):
     session_id = await get_session_id(request)
     session_data = await get_session_data(session_id)
+    cache_key = f"photo_details:{photo_id}"
+    # Try to get cached details
+    cached = await redis_client.get(cache_key)
+    if cached:
+        resp = JSONResponse(json.loads(cached))
+        resp.set_cookie(SESSION_COOKIE, session_id, httponly=True)
+        return resp
     logged_in = session_data.get("oauth_token") is not None
     if logged_in:
         data = await flickr.fetch_photo_details(
@@ -237,9 +244,10 @@ async def photo_details(request: Request, photo_id: str):
     views = data.get("views")
     comments = data.get("comments", {}).get("_content")
     description = data.get("description", {}).get("_content")
-    resp = JSONResponse(
-        {"tags": tags, "views": views, "comments": comments, "description": description}
-    )
+    result = {"tags": tags, "views": views, "comments": comments, "description": description}
+    # Cache the result for 5 minutes
+    await redis_client.set(cache_key, json.dumps(result), ex=300)
+    resp = JSONResponse(result)
     resp.set_cookie(SESSION_COOKIE, session_id, httponly=True)
     return resp
 
