@@ -10,7 +10,7 @@
 </div>
 <script>
   // Progressive image loading
-  const imageUrls = {{ image_urls|tojson|safe }};
+  const imageUrls = {{ image_urls| tojson | safe }};
   // Ensure imageUrls is always an array
   if (!Array.isArray(imageUrls)) {
     imageUrls = [imageUrls];

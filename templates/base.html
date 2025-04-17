@@ -15,6 +15,9 @@
       </h1>
       <nav>
         <a href="/">Home</a>
+        {% if user_display_name %}
+        <a href="/friends" style="margin-left:1em;">Friends</a>
+        {% endif %}
         {% block nav_extra %}{% endblock %}
         {% if user_display_name %}
         <span style="margin-left:2em; color:#222;">

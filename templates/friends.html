@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block nav_extra %}
+<a href="/">&laquo; Back to Photo Stream</a>
+{% endblock %}
+
+{% block content %}
+<h2>Friends' Recently Uploaded Photos</h2>
+
+<div id="dynamic-friends-counter" style="margin:2em 0; text-align:center; color:#666; font-size:1.05em;">Loaded 0 of 0 friends...</div>
+<ul class="photo-list" id="friends-list"></ul>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const friends = [
+      {% for friend in friends %}
+      {
+      nsid: "{{ friend.nsid }}",
+      realname: {{ friend.realname | tojson }},
+    username: {{ friend.username | tojson }},
+      },
+    {% endfor %}
+    ];
+  let loadedPhotos = [];
+  let completed = 0;
+  const total = friends.length;
+  const friendsList = document.getElementById('friends-list');
+  const counterDiv = document.getElementById('dynamic-friends-counter');
+  counterDiv.textContent = `Loaded 0 of ${total} friends...`;
+
+  function updateCounter() {
+    counterDiv.textContent = `Loaded ${completed} of ${total} friends...`;
+    if (completed === total) {
+      setTimeout(() => counterDiv.style.display = 'none', 500);
+    }
+  }
+
+  friends.forEach(friend => {
+    fetch('/friend_latest_photo/' + friend.nsid)
+      .then(resp => resp.json())
+      .then(photo => {
+        completed++;
+        updateCounter();
+        if (!photo.error) {
+          loadedPhotos.push({
+            ...photo,
+            friend: friend
+          });
+        }
+        renderList();
+      })
+      .catch(() => {
+        completed++;
+        updateCounter();
+        renderList();
+      });
+  });
+
+  // JS version of the Python datetimeformat filter
+  // NOTE: This logic must be kept in sync with the Python version in main.py (function datetimeformat).
+  // If you update this, update the Python version as well.
+  function datetimeformat(value) {
+    try {
+      let dt;
+      if (typeof value === 'number' || (typeof value === 'string' && /^\d+$/.test(value))) {
+        dt = new Date(Number(value) * 1000);
+      } else if (typeof value === 'string') {
+        // Try parsing as "YYYY-MM-DD HH:MM:SS"
+        const m = value.match(/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/);
+        if (m) {
+          dt = new Date(
+            Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4]), Number(m[5]), Number(m[6])
+          );
+        } else {
+          return value;
+        }
+      } else {
+        return value;
+      }
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const dtDay = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+      const yesterday = new Date(today.getTime() - 86400000);
+      function pad(num) { return num < 10 ? '0' + num : num; }
+      let hour = dt.getHours();
+      let ampm = hour >= 12 ? 'PM' : 'AM';
+      hour = hour % 12;
+      if (hour === 0) hour = 12;
+      const minute = pad(dt.getMinutes());
+      if (dtDay.getTime() === today.getTime()) {
+        return `Today at ${hour}:${minute} ${ampm}`;
+      } else if (dtDay.getTime() === yesterday.getTime()) {
+        return `Yesterday at ${hour}:${minute} ${ampm}`;
+      } else {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return `${months[dt.getMonth()]} ${dt.getDate()}, ${dt.getFullYear()}, ${hour}:${minute} ${ampm}`;
+      }
+    } catch (e) {
+      return value;
+    }
+  }
+
+  function renderList() {
+    // Sort by dateupload descending
+    loadedPhotos.sort((a, b) => parseInt(b.dateupload || 0) - parseInt(a.dateupload || 0));
+    friendsList.innerHTML = '';
+    loadedPhotos.forEach(photo => {
+      const li = document.createElement('li');
+      li.className = 'photo-row';
+      let html = '';
+      if (photo.url_q) {
+        html += `<a href="/photo/${photo.id}"><img src="${photo.url_q}" alt="${photo.title || ''}"></a>`;
+      }
+      html += `<div class='photo-main'>`;
+      html += `<div class='photo-title'><a href='/photo/${photo.id}'>${photo.title || '(Untitled)'}</a></div>`;
+      html += `<div class='photo-meta'>`;
+      html += `<span>Friend: <strong>${photo.friend.realname || photo.friend.username || photo.friend.nsid}</strong></span><br>`;
+      html += `<span>Date uploaded: ${photo.dateupload ? datetimeformat(photo.dateupload) : 'N/A'}</span><br>`;
+      html += `<span>Date taken: ${photo.datetaken ? datetimeformat(photo.datetaken) : 'N/A'}</span>`;
+      html += `</div></div>`;
+      html += `<div class='photo-extra'><div class='photo-details' id='details-${photo.id}'></div></div>`;
+      li.innerHTML = html;
+      friendsList.appendChild(li);
+    });
+    if (completed === total && loadedPhotos.length === 0) {
+      friendsList.innerHTML = '<li style="text-align:center; color:#888;">No public uploads from friends.</li>';
+    }
+  }
+  });
+</script>
+{% endblock %}
