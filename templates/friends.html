@@ -34,25 +34,35 @@
     }
   }
 
-  friends.forEach(friend => {
-    fetch('/friend_latest_photo/' + friend.nsid)
-      .then(resp => resp.json())
-      .then(photo => {
-        completed++;
-        updateCounter();
-        if (!photo.error) {
-          loadedPhotos.push({
-            ...photo,
-            friend: friend
-          });
-        }
-        renderList();
-      })
-      .catch(() => {
-        completed++;
-        updateCounter();
-        renderList();
-      });
+  // Get all photos in one batch request
+  const nsids = friends.map(f => f.nsid);
+  fetch('/friend_latest_photos', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(nsids)
+  })
+  .then(resp => resp.json())
+  .then(photosData => {
+    completed = friends.length;
+    updateCounter();
+    
+    friends.forEach(friend => {
+      const photo = photosData[friend.nsid];
+      if (photo && !photo.error) {
+        loadedPhotos.push({
+          ...photo,
+          friend: friend
+        });
+      }
+    });
+    renderList();
+  })
+  .catch(() => {
+    completed = friends.length;
+    updateCounter();
+    renderList();
   });
 
   // JS version of the Python datetimeformat filter
