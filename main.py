@@ -461,10 +461,25 @@ async def friend_latest_photos(request: Request, nsids: list = Body(...)):
                 cache_key, json.dumps(contacts_photos), ex=REDIS_FRIENDS_CACHE_TTL
             )
 
-        # Create mapping of nsid to photo
-        photo_map = {photo["owner"]: photo for photo in contacts_photos}
+        # Create mapping of nsid to photo and fetch square thumbnails
+        photo_map = {}
+        for photo in contacts_photos:
+            sizes = await flickr.fetch_photo_sizes(
+                session_oauth_token,
+                session_oauth_secret,
+                photo["id"]
+            )
+            if sizes:
+                # Find square thumbnail (label="Square" or "Large Square")
+                square = next(
+                    (s for s in sizes if s["label"] in ["Square", "Large Square"]),
+                    None
+                )
+                if square:
+                    photo["square_url"] = square["source"]
+            photo_map[photo["owner"]] = photo
 
-        # Build response with requested nsids
+        # Build response with requested nsids, maintaining original order
         out = {}
         for nsid in nsids:
             if nsid in photo_map:

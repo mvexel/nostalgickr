@@ -208,6 +208,32 @@ class FlickrAPI:
             return resp.json().get("photos", {}).get("photo", [])
         return None
 
+    async def fetch_photo_sizes(
+        self, oauth_token: str, oauth_token_secret: str, photo_id: str
+    ) -> Optional[list]:
+        """
+        Fetch available sizes for a photo.
+
+        Args:
+            oauth_token (str): OAuth token.
+            oauth_token_secret (str): OAuth token secret.
+            photo_id (str): The Flickr photo ID to fetch sizes for.
+
+        Returns:
+            Optional[list]: List of size dictionaries if successful, else None.
+        """
+        oauth = self.get_oauth_session(oauth_token, oauth_token_secret)
+        params = {
+            "method": "flickr.photos.getSizes",
+            "photo_id": photo_id,
+            "format": "json",
+            "nojsoncallback": 1,
+        }
+        resp = oauth.get(self.base_url, params=params)
+        if resp.ok:
+            return resp.json().get("sizes", {}).get("size", [])
+        return None
+
     async def fetch_photo_details(
         self, oauth_token: str, oauth_token_secret: str, photo_id: str
     ) -> Optional[dict]:

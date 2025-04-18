@@ -117,8 +117,8 @@
       const li = document.createElement('li');
       li.className = 'photo-row';
       let html = '';
-      if (photo.url_q) {
-        html += `<a href="/photo/${photo.id}"><img src="${photo.url_q}" alt="${photo.title || ''}"></a>`;
+      if (photo.square_url) {
+        html += `<a href="/photo/${photo.id}"><img src="${photo.square_url}" alt="${photo.title || ''}"></a>`;
       }
       html += `<div class='photo-main'>`;
       html += `<div class='photo-title'><a href='/photo/${photo.id}'>${photo.title || '(Untitled)'}</a></div>`;
