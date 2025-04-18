@@ -7,3 +7,5 @@ starlette
 itsdangerous
 redis
 httpx
+debugpy
+ipdb
