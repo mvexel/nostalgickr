@@ -19,7 +19,18 @@ style.textContent = `
     font-style: italic;
   }
   .photo-loaded {
-    display: none; /* Will be shown when photos load */
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  .photo-loaded img {
+    width: 75px;
+    height: 75px;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+  .photo-main {
+    flex-grow: 1;
   }
 `;
 document.head.appendChild(style);
