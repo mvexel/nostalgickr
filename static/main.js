@@ -1,7 +1,18 @@
 
 
-// JS version of the Python datetimeformat filter
-// NOTE: This logic must be kept in sync with the Python version in main.py (function datetimeformat).
+/**
+ * Format timestamp or date string into friendly display (matches Python version).
+ * 
+ * Examples:
+ *   - Today at 3:45 PM
+ *   - Yesterday at 11:20 AM
+ *   - Apr 15, 2025, 9:00 PM
+ *
+ * @param {number|string} value - Unix timestamp (number) or date string (YYYY-MM-DD HH:MM:SS)
+ * @returns {string} Formatted date string. Returns original value on parse failure.
+ * 
+ * @see main.py datetimeformat() - Keep logic in sync with Python version
+ */
 function datetimeformat(value) {
   try {
     let dt;
@@ -43,8 +54,23 @@ function datetimeformat(value) {
   }
 }
 
+/**
+ * Main DOM content loaded handler - initializes photo browsing UI.
+ * 
+ * Handles:
+ * - Progressive loading of friends list with photos
+ * - Lazy loading of photo details via IntersectionObserver
+ * - Thumbnail loading and error handling
+ */
 document.addEventListener('DOMContentLoaded', function() {
-  // Friends list progressive rendering logic
+  /**
+   * Load and render friends list with latest photos.
+   * 
+   * Makes API calls to:
+   * 1. Fetch latest photos for all friends
+   * 2. Batch load photo sizes for thumbnails
+   * 3. Lazy load additional details when scrolled into view
+   */
   if (window.friendsList && document.getElementById('friends-list')) {
     const friends = window.friendsList;
     const friendsListEl = document.getElementById('friends-list');
@@ -123,7 +149,15 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Initialize IntersectionObserver for lazy loading details
+  /**
+   * Initialize IntersectionObserver for lazy loading photo details.
+   * 
+   * Loads additional metadata (tags, views, comments) only when:
+   * - User scrolls the details section into view
+   * - Details haven't been loaded already
+   * 
+   * Uses fetch() to get details from /photo_details/{id} endpoint
+   */
   const loaded = new Set();
   const observer = new window.IntersectionObserver((entries, obs) => {
     entries.forEach(entry => {
