@@ -466,8 +466,8 @@ import asyncio
 @app.post("/friend_latest_photos")
 async def friend_latest_photos(request: Request, nsids: list = Body(...)):
     """
-    Fetch latest photos for a list of friends concurrently.
-    Only fetch from Flickr for friends not already cached in Redis.
+    Fetch latest photos for a list of friends using contacts photos API.
+    Uses Redis cache for better performance.
     """
     session_id = await get_session_id(request)
     session_data = await get_session_data(session_id)
@@ -476,50 +476,39 @@ async def friend_latest_photos(request: Request, nsids: list = Body(...)):
     if not (session_oauth_token and session_oauth_secret):
         return JSONResponse({"error": "Not authenticated"}, status_code=401)
 
-    out = {}
-    to_fetch = []
     try:
-        # First, try to get all cached values from Redis
-        cache_keys = [f"friend_latest_photo:{nsid}" for nsid in nsids]
-        cached_values = await redis_client.mget(cache_keys)
-        for nsid, cached in zip(nsids, cached_values):
-            if cached:
-                out[nsid] = json.loads(cached)
+        # Try to get cached contacts photos first
+        cache_key = "contacts_photos"
+        cached = await redis_client.get(cache_key)
+        if cached:
+            contacts_photos = json.loads(cached)
+        else:
+            contacts_photos = await flickr.fetch_contacts_photos(
+                session_oauth_token,
+                session_oauth_secret,
+                count=50,
+                single_photo=True,
+                just_friends=True
+            )
+            if contacts_photos is None:
+                return JSONResponse({"error": "Failed to fetch contacts photos"}, status_code=500)
+            # Cache for 2 hours
+            await redis_client.set(
+                cache_key,
+                json.dumps(contacts_photos),
+                ex=REDIS_FRIENDS_CACHE_TTL
+            )
+
+        # Create mapping of nsid to photo
+        photo_map = {photo['owner']: photo for photo in contacts_photos}
+        
+        # Build response with requested nsids
+        out = {}
+        for nsid in nsids:
+            if nsid in photo_map:
+                out[nsid] = photo_map[nsid]
             else:
-                to_fetch.append(nsid)
-        if to_fetch:
-            async with httpx.AsyncClient() as client:
-
-                async def fetch_photo(nsid):
-                    photos = await flickr.fetch_photos_of_user(
-                        session_oauth_token, session_oauth_secret, nsid, per_page=1
-                    )
-                    if photos and len(photos) > 0:
-                        await redis_client.set(
-                            f"friend_latest_photo:{nsid}",
-                            json.dumps(photos[0]),
-                            ex=REDIS_FRIENDS_CACHE_TTL,
-                        )
-                        return nsid, photos[0]
-                    await redis_client.set(
-                        f"friend_latest_photo:{nsid}",
-                        json.dumps({"error": "No photo found"}),
-                        ex=REDIS_FRIENDS_CACHE_TTL,
-                    )
-                    return nsid, {"error": "No photo found"}
-
-                fetch_tasks = [fetch_photo(nsid) for nsid in to_fetch]
-                fetched = await asyncio.gather(*fetch_tasks, return_exceptions=True)
-                for i, result in enumerate(fetched):
-                    nsid = to_fetch[i]
-                    if isinstance(result, Exception):
-                        import logging
-
-                        logging.error(f"Error fetching photo for {nsid}: {str(result)}")
-                        out[nsid] = {"error": "Failed to fetch photo"}
-                    else:
-                        nsid, photo = result
-                        out[nsid] = photo
+                out[nsid] = {"error": "No photo found"}
     except httpx.ConnectError:
         return JSONResponse(
             {
