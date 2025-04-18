@@ -72,15 +72,32 @@
     })
     .then(resp => resp.json())
     .then(sizesData => {
-      // Add square URLs to photos
+      // Update photos with thumbnails and load images smoothly
       photos.forEach(photo => {
-        const sizes = sizesData[photo.id];
-        if (sizes) {
-          const square = sizes.find(s => 
+        if (photo.id && sizesData[photo.id]) {
+          const square = sizesData[photo.id].find(s => 
             s.label === "Square" || s.label === "Large Square"
           );
           if (square) {
             photo.square_url = square.source;
+            // Create image element to preload
+            const img = new Image();
+            img.src = square.source;
+            img.onload = function() {
+              const placeholder = document.querySelector(`.thumbnail-placeholder[data-id="${photo.id}"]`);
+              if (placeholder) {
+                const loadedImg = document.createElement('img');
+                loadedImg.src = square.source;
+                loadedImg.alt = photo.title || '';
+                loadedImg.className = 'loaded';
+                loadedImg.style.opacity = '0';
+                placeholder.replaceWith(loadedImg);
+                // Fade in
+                setTimeout(() => {
+                  loadedImg.style.opacity = '1';
+                }, 10);
+              }
+            };
           }
         }
       });
@@ -150,8 +167,13 @@
       const li = document.createElement('li');
       li.className = 'photo-row';
       let html = '';
-      if (photo.square_url) {
-        html += `<a href="/photo/${photo.id}"><img src="${photo.square_url}" alt="${photo.title || ''}"></a>`;
+      if (photo.id) {
+        if (photo.square_url) {
+          html += `<a href="/photo/${photo.id}"><img src="${photo.square_url}" alt="${photo.title || ''}" class="loaded"></a>`;
+        } else {
+          // Show placeholder that will be replaced when image loads
+          html += `<a href="/photo/${photo.id}" class="thumbnail-placeholder" data-id="${photo.id}"></a>`;
+        }
       }
       html += `<div class='photo-main'>`;
       html += `<div class='photo-title'><a href='/photo/${photo.id}'>${photo.title || '(Untitled)'}</a></div>`;
