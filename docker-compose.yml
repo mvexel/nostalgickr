@@ -26,6 +26,7 @@ services:
       - SESSION_SECRET_KEY=${SESSION_SECRET_KEY}
       - REDIS_URL=redis://redis:6379/0
       - PYTHONBREAKPOINT=ipdb.set_trace
+      - PYTHONUNBUFFERED=1
     cap_add:
       - SYS_PTRACE
     security_opt:
