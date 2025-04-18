@@ -8,7 +8,16 @@
 <h2>Friends' Recently Uploaded Photos</h2>
 
 <div id="dynamic-friends-counter" style="margin:2em 0; text-align:center; color:#666; font-size:1.05em;">Loaded 0 of 0 friends...</div>
-<ul class="photo-list" id="friends-list"></ul>
+<ul class="photo-list" id="friends-list">
+  {% for friend in friends %}
+  <li class="friend-row">
+    <div class="friend-info">
+      <div class="friend-name">{{ friend.realname or friend.username or friend.nsid }}</div>
+      <div class="loading-photo">Loading photo...</div>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     const friends = [
@@ -162,10 +171,31 @@
   function renderList() {
     // Sort by dateupload descending
     loadedPhotos.sort((a, b) => parseInt(b.dateupload || 0) - parseInt(a.dateupload || 0));
-    friendsList.innerHTML = '';
     loadedPhotos.forEach(photo => {
-      const li = document.createElement('li');
-      li.className = 'photo-row';
+      // Find existing friend row
+      const friendRow = Array.from(friendsList.children).find(row => 
+        row.textContent.includes(photo.friend.nsid)
+      );
+        
+      if (!friendRow) return;
+        
+      // Update with photo data
+      friendRow.innerHTML = `
+        <div class="photo-loaded">
+          ${photo.square_url ? 
+            `<a href="/photo/${photo.id}"><img src="${photo.square_url}" alt="${photo.title || ''}"></a>` : 
+            `<a href="/photo/${photo.id}" class="thumbnail-placeholder" data-id="${photo.id}"></a>`
+          }
+          <div class='photo-main'>
+            <div class='photo-title'><a href='/photo/${photo.id}'>${photo.title || '(Untitled)'}</a></div>
+            <div class='photo-meta'>
+              <span>Uploaded: ${photo.dateupload ? datetimeformat(photo.dateupload) : 'N/A'}</span><br>
+              <span>Taken: ${photo.datetaken ? datetimeformat(photo.datetaken) : 'N/A'}</span>
+            </div>
+          </div>
+          <div class='photo-extra'><div class='photo-details' id='details-${photo.id}'></div></div>
+        </div>
+      `;
       let html = '';
       if (photo.id) {
         if (photo.square_url) {

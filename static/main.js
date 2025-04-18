@@ -1,3 +1,29 @@
+// Add some temporary styles for loading states
+const style = document.createElement('style');
+style.textContent = `
+  .friend-row {
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+  }
+  .friend-info {
+    flex-grow: 1;
+  }
+  .friend-name {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+  }
+  .loading-photo {
+    color: #666;
+    font-style: italic;
+  }
+  .photo-loaded {
+    display: none; /* Will be shown when photos load */
+  }
+`;
+document.head.appendChild(style);
+
 document.addEventListener('DOMContentLoaded', function() {
   const loaded = new Set();
   const observer = new window.IntersectionObserver((entries, obs) => {
