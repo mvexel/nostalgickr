@@ -25,6 +25,7 @@ style.textContent = `
 document.head.appendChild(style);
 
 document.addEventListener('DOMContentLoaded', function() {
+  // Initialize IntersectionObserver for lazy loading details
   const loaded = new Set();
   const observer = new window.IntersectionObserver((entries, obs) => {
     entries.forEach(entry => {
