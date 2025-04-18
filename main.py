@@ -427,45 +427,33 @@ async def friends_photos(request: Request):
 
 @app.get("/friend_latest_photo/{nsid}")
 async def friend_latest_photo(request: Request, nsid: str):
-    # Single-friend endpoint remains for legacy FE calls
+    """Legacy endpoint - now uses contacts photos API for consistency"""
     try:
-        cache_key = f"friend_latest_photo:{nsid}"
-        cached = await redis_client.get(cache_key)
-        if cached:
-            resp = JSONResponse(json.loads(cached))
-            resp.set_cookie(
-                SESSION_COOKIE, await get_session_id(request), httponly=True
-            )
-            return resp
         session_id = await get_session_id(request)
         session_data = await get_session_data(session_id)
         oauth_token = session_data.get("oauth_token")
         oauth_secret = session_data.get("oauth_token_secret")
         if not (oauth_token and oauth_secret):
             return JSONResponse({"error": "Not authenticated"}, status_code=401)
-        user_photos = await flickr.fetch_photos_of_user(
-            oauth_token, oauth_secret, nsid, per_page=1
-        )
-        if user_photos and len(user_photos) > 0:
-            await redis_client.set(
-                cache_key, json.dumps(user_photos[0]), ex=REDIS_FRIENDS_CACHE_TTL
-            )
-            resp = JSONResponse(user_photos[0])
-            resp.set_cookie(SESSION_COOKIE, session_id, httponly=True)
-            return resp
-        await redis_client.set(
-            cache_key,
-            json.dumps({"error": "No photo found"}),
-            ex=REDIS_FRIENDS_CACHE_TTL,
-        )
-        resp = JSONResponse({"error": "No photo found"}, status_code=404)
-        resp.set_cookie(SESSION_COOKIE, session_id, httponly=True)
-        return resp
-    except Exception as e:
-        import traceback
 
-        print(f"[ERROR] Exception in /friend_latest_photo/{{nsid}}: {e}")
-        traceback.print_exc()
+        # Use the contacts photos API but filter for this specific nsid
+        contacts_photos = await flickr.fetch_contacts_photos(
+            oauth_token,
+            oauth_secret,
+            count=50,  # Get enough to hopefully find this user's photo
+            single_photo=True,
+            just_friends=True
+        )
+
+        if contacts_photos:
+            for photo in contacts_photos:
+                if photo.get('owner') == nsid:
+                    return JSONResponse(photo)
+
+        return JSONResponse({"error": "No photo found"}, status_code=404)
+    except Exception as e:
+        import logging
+        logging.error(f"Error in /friend_latest_photo/{nsid}: {str(e)}")
         return JSONResponse(
             {"error": "Internal server error", "details": str(e)}, status_code=500
         )
