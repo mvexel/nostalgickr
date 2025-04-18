@@ -48,16 +48,49 @@
     completed = friends.length;
     updateCounter();
     
+    // Collect photo data and IDs
+    const photos = [];
+    const photoIds = [];
     friends.forEach(friend => {
       const photo = photosData[friend.nsid];
       if (photo && !photo.error) {
-        loadedPhotos.push({
+        photos.push({
           ...photo,
           friend: friend
         });
+        photoIds.push(photo.id);
       }
     });
-    renderList();
+
+    // Get sizes in parallel
+    fetch('/batch_photo_sizes', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(photoIds)
+    })
+    .then(resp => resp.json())
+    .then(sizesData => {
+      // Add square URLs to photos
+      photos.forEach(photo => {
+        const sizes = sizesData[photo.id];
+        if (sizes) {
+          const square = sizes.find(s => 
+            s.label === "Square" || s.label === "Large Square"
+          );
+          if (square) {
+            photo.square_url = square.source;
+          }
+        }
+      });
+      loadedPhotos = photos;
+      renderList();
+    })
+    .catch(() => {
+      loadedPhotos = photos;
+      renderList();
+    });
   })
   .catch(() => {
     completed = friends.length;

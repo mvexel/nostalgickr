@@ -430,6 +430,11 @@ async def friend_latest_photos(request: Request, nsids: list = Body(...)):
     """
     Fetch latest photos for a list of friends using contacts photos API.
     Uses Redis cache for better performance.
+    Returns basic photo info without sizes (those are fetched separately).
+    """
+    """
+    Fetch latest photos for a list of friends using contacts photos API.
+    Uses Redis cache for better performance.
     """
     session_id = await get_session_id(request)
     session_data = await get_session_data(session_id)
@@ -451,7 +456,7 @@ async def friend_latest_photos(request: Request, nsids: list = Body(...)):
                 count=50,
                 single_photo=True,
                 just_friends=True,
-                extras="date_upload,date_taken,owner_name"
+                extras="date_upload,date_taken,owner_name,icon_server,icon_farm"
             )
             if contacts_photos is None:
                 return JSONResponse(
@@ -462,23 +467,8 @@ async def friend_latest_photos(request: Request, nsids: list = Body(...)):
                 cache_key, json.dumps(contacts_photos), ex=REDIS_FRIENDS_CACHE_TTL
             )
 
-        # Create mapping of nsid to photo and fetch square thumbnails
-        photo_map = {}
-        for photo in contacts_photos:
-            sizes = await flickr.fetch_photo_sizes(
-                session_oauth_token,
-                session_oauth_secret,
-                photo["id"]
-            )
-            if sizes:
-                # Find square thumbnail (label="Square" or "Large Square")
-                square = next(
-                    (s for s in sizes if s["label"] in ["Square", "Large Square"]),
-                    None
-                )
-                if square:
-                    photo["square_url"] = square["source"]
-            photo_map[photo["owner"]] = photo
+        # Create mapping of nsid to photo
+        photo_map = {photo["owner"]: photo for photo in contacts_photos}
 
         # Build response with requested nsids, maintaining original order
         out = {}
@@ -505,3 +495,62 @@ async def friend_latest_photos(request: Request, nsids: list = Body(...)):
     resp = JSONResponse(out)
     resp.set_cookie(SESSION_COOKIE, session_id, httponly=True)
     return resp
+
+
+@app.post("/batch_photo_sizes")
+async def batch_photo_sizes(request: Request, photo_ids: list = Body(...)):
+    """
+    Fetch sizes for multiple photos in parallel with caching.
+    """
+    session_id = await get_session_id(request)
+    session_data = await get_session_data(session_id)
+    session_oauth_token = session_data.get("oauth_token")
+    session_oauth_secret = session_data.get("oauth_token_secret")
+    if not (session_oauth_token and session_oauth_secret):
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+
+    try:
+        # Try to get cached sizes first
+        cached_sizes = {}
+        uncached_ids = []
+        for photo_id in photo_ids:
+            cache_key = f"photo_sizes:{photo_id}"
+            cached = await redis_client.get(cache_key)
+            if cached:
+                cached_sizes[photo_id] = json.loads(cached)
+            else:
+                uncached_ids.append(photo_id)
+
+        # Fetch uncached sizes in parallel
+        if uncached_ids:
+            import asyncio
+            tasks = []
+            for photo_id in uncached_ids:
+                tasks.append(
+                    flickr.fetch_photo_sizes(
+                        session_oauth_token,
+                        session_oauth_secret,
+                        photo_id
+                    )
+                )
+            results = await asyncio.gather(*tasks)
+            
+            # Cache results and build response
+            for photo_id, sizes in zip(uncached_ids, results):
+                if sizes:
+                    # Cache for 1 week since sizes don't change
+                    await redis_client.set(
+                        f"photo_sizes:{photo_id}",
+                        json.dumps(sizes),
+                        ex=60*60*24*7
+                    )
+                    cached_sizes[photo_id] = sizes
+
+        return JSONResponse(cached_sizes)
+    except Exception as e:
+        import logging
+        logging.error(f"Error in batch_photo_sizes: {str(e)}")
+        return JSONResponse(
+            {"error": "An error occurred while fetching photo sizes"},
+            status_code=500
+        )
