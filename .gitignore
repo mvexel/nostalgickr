@@ -44,3 +44,4 @@ static/app.js
 # Project config
 .python-version
 pyproject.toml
+.aider*

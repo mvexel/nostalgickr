@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>{% block title %}Old Style Flickr{% endblock %}</title>
+  <title>{% block title %}nostalgickr{% endblock %}</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 
@@ -11,7 +11,7 @@
   <div id="container">
     <header>
       <h1>
-        <span style="color: #0063dc;">flick</span><span style="color: #ff0084;">r</span>
+        <span style="color: #0063dc;">nostalgick</span><span style="color: #ff0084;">r</span>
       </h1>
       <nav>
         <a href="/">Home</a>
@@ -20,23 +20,23 @@
         {% endif %}
         {% block nav_extra %}{% endblock %}
         {% if user_display_name %}
-        <span style="margin-left:2em; color:#222;">
+        <span id="user">
             You are {% if user_display_name._content is defined %}{{ user_display_name._content }}{% else %}{{ user_display_name }}{% endif %}
           </span>
-        <form action="/logout" method="get" style="display:inline; margin-left:1em;">
+        <form action="/logout" method="get">
           <button type="submit">Log Out</button>
         </form>
         {% else %}
-        <form action="/login" method="get" style="display:inline; margin-left:1em;">
+        <form action="/login" method="get">
           <button type="submit">Log In with Flickr</button>
         </form>
         {% endif %}
       </nav>
     </header>
     {% block content %}{% endblock %}
-    <footer style="margin-top:2em; color:#888; font-size:0.95em;">
+    <footer>
       <hr>
-      <div>Old Style Flickr &copy; {{ now.year }}</div>
+      <div>nostalgickr &copy; {{ now.year }}</div>
     </footer>
   </div>
   <script src="/static/main.js" defer></script>

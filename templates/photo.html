@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ photo.title._content if photo.title and photo.title._content else 'Untitled' }} | Old Style Flickr{% endblock %}
+{% block title %}{{ photo.title._content if photo.title and photo.title._content else 'Untitled' }} | nostalgickr{% endblock %}
 
 {% block nav_extra %}
 <a href="javascript:history.back();">Back to stream</a>
@@ -11,29 +11,29 @@
 <script>
   const sizesData = {{ sizes_data| tojson | safe }};
   const img = document.getElementById('progressive-photo');
-  
+
   if (sizesData && sizesData.length) {
     // Get viewport width
     const viewportWidth = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
-    
+
     // Select 3 sizes - small, medium, large based on viewport
     const smallSize = sizesData.find(size => size.width <= 800) || sizesData[sizesData.length - 1];
     const mediumSize = sizesData.find(size => size.width > 800 && size.width <= 1600) || sizesData[0];
     const largeSize = sizesData.find(size => size.width > 1600) || sizesData[0];
-    
+
     // Get final image's aspect ratio
     const finalSize = sizesData.reduce((a, b) => a.width > b.width ? a : b);
     const finalAspect = finalSize.width / finalSize.height;
-    
+
     // Filter sizes to only those with matching aspect ratio (±5%)
     const matchingSizes = sizesData.filter(size => {
       const aspect = size.width / size.height;
       return Math.abs(aspect - finalAspect) < (finalAspect * 0.05);
     });
-    
+
     // Sort matching sizes by width
     const sortedSizes = [...matchingSizes].sort((a, b) => a.width - b.width);
-    
+
     // Select 5 progressively larger sizes from matching ones
     const sizesToLoad = [];
     if (sortedSizes.length > 0) {
@@ -43,20 +43,20 @@
       if (sortedSizes.length > 3) sizesToLoad.push(sortedSizes[Math.floor(sortedSizes.length * 0.75)]);
       sizesToLoad.push(sortedSizes[sortedSizes.length - 1]); // Largest
     }
-    
+
     let current = 0;
     function loadNext() {
       if (current >= sizesToLoad.length) {
         img.style.imageRendering = 'auto';
         return;
       }
-      
+
       const nextImg = new window.Image();
       nextImg.src = sizesToLoad[current].source;
-      nextImg.onload = function() {
+      nextImg.onload = function () {
         // Initial delay only for first image
         const delay = current === 0 ? 100 : 400;
-        
+
         setTimeout(() => {
           img.src = nextImg.src;
           img.alt = "{{ photo.title._content or photo.title }}";
@@ -69,12 +69,12 @@
           current++;
         }, delay);
       };
-      nextImg.onerror = function() {
+      nextImg.onerror = function () {
         img.alt = "{{ photo.title._content or photo.title }}";
         img.style.imageRendering = 'auto';
       };
     }
-    
+
     if (sizesToLoad.length > 0) {
       // Start with smallest size
       loadNext();

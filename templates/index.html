@@ -17,6 +17,7 @@
 {% endblock %}
 
 {% block content %}
+{% if logged_in %}
 <h2>My Photos!</h2>
 <ul class="photo-list">
   {% for photo in photos %}
@@ -49,4 +50,9 @@
   {% if page < pages %} <a href="/?page={{ page + 1 }}{% if privacy %}&privacy={{ privacy }}{% endif %}">Next &raquo;</a>
     {% endif %}
 </div>
+{% else %}
+<div>
+  This is <em>nostalgickr</em>, a way to see your flickr photos that sort of resembles the flickr of 2005. Get started by logging in to <span style="color: #0063dc;">flick</span><span style="color: #ff0084;">r</span> using the log in button up top.
+</div>
+{% endif %}
 {% endblock %}

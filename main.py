@@ -455,8 +455,8 @@ async def friend_latest_photos(request: Request, nsids: list = Body(...)):
                 session_oauth_secret,
                 count=50,
                 single_photo=True,
-                just_friends=True,
-                extras="date_upload,date_taken,owner_name,icon_server,icon_farm"
+                just_friends=False,
+                extras="date_upload,date_taken,owner_name,icon_server,icon_farm",
             )
             if contacts_photos is None:
                 return JSONResponse(
@@ -524,17 +524,16 @@ async def batch_photo_sizes(request: Request, photo_ids: list = Body(...)):
         # Fetch uncached sizes in parallel
         if uncached_ids:
             import asyncio
+
             tasks = []
             for photo_id in uncached_ids:
                 tasks.append(
                     flickr.fetch_photo_sizes(
-                        session_oauth_token,
-                        session_oauth_secret,
-                        photo_id
+                        session_oauth_token, session_oauth_secret, photo_id
                     )
                 )
             results = await asyncio.gather(*tasks)
-            
+
             # Cache results and build response
             for photo_id, sizes in zip(uncached_ids, results):
                 if sizes:
@@ -542,15 +541,15 @@ async def batch_photo_sizes(request: Request, photo_ids: list = Body(...)):
                     await redis_client.set(
                         f"photo_sizes:{photo_id}",
                         json.dumps(sizes),
-                        ex=60*60*24*7
+                        ex=60 * 60 * 24 * 7,
                     )
                     cached_sizes[photo_id] = sizes
 
         return JSONResponse(cached_sizes)
     except Exception as e:
         import logging
+
         logging.error(f"Error in batch_photo_sizes: {str(e)}")
         return JSONResponse(
-            {"error": "An error occurred while fetching photo sizes"},
-            status_code=500
+            {"error": "An error occurred while fetching photo sizes"}, status_code=500
         )
