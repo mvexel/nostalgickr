@@ -94,17 +94,27 @@ class FlickrAPI:
         )
 
     async def fetch_user_info(
-        self, oauth_token: str, oauth_token_secret: str
+        self, 
+        oauth_token: str, 
+        oauth_token_secret: str
     ) -> Optional[Dict[str, Any]]:
-        """
-        Fetch information about the currently authenticated user.
+        """Fetch information about the currently authenticated user.
+
+        Uses flickr.test.login API endpoint which returns basic user info.
 
         Args:
-            oauth_token (str): OAuth token.
-            oauth_token_secret (str): OAuth token secret.
+            oauth_token: Valid OAuth token for authentication
+            oauth_token_secret: Valid OAuth token secret
 
         Returns:
-            Optional[Dict[str, Any]]: User info dictionary if successful, else None.
+            Dictionary containing user info if successful, None on failure.
+            Contains keys like:
+                - id: User NSID
+                - username: Dictionary with _content field for display name
+                - other profile fields
+
+        Raises:
+            None: Errors are caught and logged, returns None on failure
         """
         try:
             oauth = self.get_oauth_session(oauth_token, oauth_token_secret)
@@ -123,17 +133,29 @@ class FlickrAPI:
             return None
 
     async def fetch_contacts(
-        self, oauth_token: str, oauth_token_secret: str
+        self, 
+        oauth_token: str, 
+        oauth_token_secret: str
     ) -> Optional[list]:
-        """
-        Fetch the contact list (friends/family) for the authenticated user.
+        """Fetch the contact list (friends/family) for authenticated user.
+
+        Uses flickr.contacts.getList API endpoint.
 
         Args:
-            oauth_token (str): OAuth token.
-            oauth_token_secret (str): OAuth token secret.
+            oauth_token: Valid OAuth token for authentication
+            oauth_token_secret: Valid OAuth token secret
 
         Returns:
-            Optional[list]: List of contact dictionaries if successful, else None.
+            List of contact dictionaries if successful, None on failure.
+            Each contact contains:
+                - nsid: Contact's Flickr ID
+                - username: Contact's username
+                - realname: Contact's real name (if available)
+                - friend: Boolean if contact is a friend
+                - family: Boolean if contact is family
+
+        Raises:
+            None: Errors are caught and logged, returns None on failure
         """
         oauth = self.get_oauth_session(oauth_token, oauth_token_secret)
         params = {
@@ -149,19 +171,35 @@ class FlickrAPI:
         return None
 
     async def fetch_photos_of_user(
-        self, oauth_token: str, oauth_token_secret: str, nsid: str, per_page: int = 1
+        self,
+        oauth_token: str,
+        oauth_token_secret: str,
+        nsid: str,
+        per_page: int = 1
     ) -> Optional[list]:
-        """
-        Fetch photos of another user by NSID (not the logged-in user's own stream).
+        """Fetch photos of another user by NSID.
+
+        Uses flickr.people.getPhotos API endpoint.
 
         Args:
-            oauth_token (str): OAuth token.
-            oauth_token_secret (str): OAuth token secret.
-            nsid (str): The Flickr NSID of the user whose photos to fetch.
-            per_page (int): Number of photos to fetch (default: 1).
+            oauth_token: Valid OAuth token for authentication
+            oauth_token_secret: Valid OAuth token secret
+            nsid: Flickr NSID of the user whose photos to fetch
+            per_page: Number of photos to return (default: 1)
 
         Returns:
-            Optional[list]: List of photo dictionaries if successful, else None.
+            List of photo dictionaries if successful, None on failure.
+            Each photo contains:
+                - id: Photo ID
+                - title: Photo title
+                - url_q: Square thumbnail URL
+                - url_m: Medium size URL
+                - date_upload: Upload timestamp
+                - date_taken: Taken date string
+                - owner_name: Owner's display name
+
+        Raises:
+            None: Errors are caught and logged, returns None on failure
         """
         oauth = self.get_oauth_session(oauth_token, oauth_token_secret)
         params = {
@@ -186,17 +224,38 @@ class FlickrAPI:
         page: int = 1,
         privacy_filter: int = None,
     ) -> Optional[dict]:
-        """
-        Fetch the logged-in user's own photos, supporting all privacy levels via flickr.photos.search.
+        """Fetch the logged-in user's own photos with privacy filtering.
+
+        Uses flickr.photos.search API endpoint with user_id="me".
 
         Args:
-            oauth_token (str): OAuth token.
-            oauth_token_secret (str): OAuth token secret.
-            per_page (int): Number of photos to fetch (default: 20).
-            privacy_filter (Optional[int]): Flickr privacy filter (1=public, 2=friends, 3=family, 4=friends+family, 5=private).
+            oauth_token: Valid OAuth token for authentication
+            oauth_token_secret: Valid OAuth token secret
+            per_page: Number of photos per page (default: 20)
+            page: Page number to fetch (default: 1)
+            privacy_filter: Optional privacy level (1-5):
+                1=public, 2=friends, 3=family, 4=friends+family, 5=private
 
         Returns:
-            Optional[list]: List of photo dictionaries if successful, else None.
+            Dictionary containing:
+                - photos: List of photo dictionaries
+                - pages: Total pages available
+                - total: Total photos available
+            Returns None on failure.
+
+            Photo dictionaries contain:
+                - id: Photo ID
+                - title: Photo title
+                - url_q: Square thumbnail URL
+                - url_m: Medium size URL
+                - date_upload: Upload timestamp
+                - date_taken: Taken date string
+                - ispublic: Boolean if public
+                - isfriend: Boolean if visible to friends
+                - isfamily: Boolean if visible to family
+
+        Raises:
+            None: Errors are caught and logged, returns None on failure
         """
         oauth = self.get_oauth_session(oauth_token, oauth_token_secret)
         params = {
