@@ -457,6 +457,11 @@ async def groups_page(request: Request):
     )
     if groups is None:
         groups = []
+    # Decode HTML entities in group names
+    import html
+    for group in groups:
+        if 'name' in group:
+            group['name'] = html.unescape(group['name'])
     context = await build_template_context(
         request,
         {
