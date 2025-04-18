@@ -9,9 +9,7 @@
   <img id="progressive-photo" src="{{ image_urls[0] if image_urls else image_url }}" alt="{{ photo.title._content or photo.title }}" style="width:100%; height:100%; object-fit:contain; image-rendering: pixelated; transition: image-rendering 0.6s; background:#fafafd;">
 </div>
 <script>
-  // Progressive image loading
   const imageUrls = {{ image_urls| tojson | safe }};
-  // Ensure imageUrls is always an array
   if (!Array.isArray(imageUrls)) {
     imageUrls = [imageUrls];
   }
@@ -21,14 +19,13 @@
     function loadNext() {
       current++;
       if (current >= imageUrls.length) {
-        img.style.filter = 'none'; // Final image, remove blur
+        img.style.filter = 'none';
         return;
       }
       const nextImg = new window.Image();
       nextImg.src = imageUrls[current];
       nextImg.onload = function () {
         img.src = nextImg.src;
-        // Retro: pixelate until the last image, then smooth
         if (current === imageUrls.length - 1) {
           img.style.imageRendering = 'auto';
           img.style.filter = 'none';

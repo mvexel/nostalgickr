@@ -247,9 +247,16 @@ async def photo_details(request: Request, photo_id: str):
     views = data.get("views")
     comments = data.get("comments", {}).get("_content")
     description = data.get("description", {}).get("_content")
-    result = {"tags": tags, "views": views, "comments": comments, "description": description}
+    result = {
+        "tags": tags,
+        "views": views,
+        "comments": comments,
+        "description": description,
+    }
     # Cache the result for 2 days
-    await redis_client.set(cache_key, json.dumps(result), ex=REDIS_PHOTO_DETAILS_CACHE_TTL)
+    await redis_client.set(
+        cache_key, json.dumps(result), ex=REDIS_PHOTO_DETAILS_CACHE_TTL
+    )
     resp = JSONResponse(result)
     resp.set_cookie(SESSION_COOKIE, session_id, httponly=True)
     return resp
@@ -297,7 +304,7 @@ async def photo_page(request: Request, photo_id: str):
     sizes_resp = await httpx.AsyncClient().get(
         "https://api.flickr.com/services/rest", params=sizes_params
     )
-    image_url = None
+    image_urls = []
     if sizes_resp.status_code == 200:
         sizes_data = sizes_resp.json().get("sizes", {}).get("size", [])
         # Prefer order: Original, Large, Medium 800, Medium 640, Medium, Small
@@ -305,13 +312,8 @@ async def photo_page(request: Request, photo_id: str):
         for label in preferred:
             for size in sizes_data:
                 if size.get("label") == label:
-                    image_url = size.get("source")
+                    image_urls.append(size.get("source"))
                     break
-            if image_url:
-                break
-        # Fallback: first available
-        if not image_url and sizes_data:
-            image_url = sizes_data[-1].get("source")
     # Get user display name if logged in
     user_display_name = None
     if logged_in:
@@ -324,7 +326,7 @@ async def photo_page(request: Request, photo_id: str):
         request,
         {
             "photo": data,
-            "image_url": image_url,
+            "image_urls": image_urls,
             "user_display_name": user_display_name,
         },
     )
@@ -440,7 +442,9 @@ async def friend_latest_photo(request: Request, nsid: str):
             resp.set_cookie(SESSION_COOKIE, session_id, httponly=True)
             return resp
         await redis_client.set(
-            cache_key, json.dumps({"error": "No photo found"}), ex=REDIS_FRIENDS_CACHE_TTL
+            cache_key,
+            json.dumps({"error": "No photo found"}),
+            ex=REDIS_FRIENDS_CACHE_TTL,
         )
         resp = JSONResponse({"error": "No photo found"}, status_code=404)
         resp.set_cookie(SESSION_COOKIE, session_id, httponly=True)
