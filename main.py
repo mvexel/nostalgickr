@@ -1,19 +1,19 @@
 import datetime
-from fastapi import FastAPI, Request, Query
-from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
-from requests_oauthlib import OAuth1Session
-from flickr_api import FlickrAPI
+import json
+import secrets
 
 import httpx
 import redis.asyncio as redis
-import secrets
-import json
-
-from starlette.config import Config
+from fastapi import FastAPI, Query, Request, Body
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from starlette.requests import Request as StarletteRequest
+from fastapi.templating import Jinja2Templates
+from requests_oauthlib import OAuth1Session
+from starlette.config import Config
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.requests import Request as StarletteRequest
+
+from flickr_api import FlickrAPI
 
 
 async def get_oauth_session(request):
@@ -425,44 +425,6 @@ async def friends_photos(request: Request):
     return resp
 
 
-@app.get("/friend_latest_photo/{nsid}")
-async def friend_latest_photo(request: Request, nsid: str):
-    """Legacy endpoint - now uses contacts photos API for consistency"""
-    try:
-        session_id = await get_session_id(request)
-        session_data = await get_session_data(session_id)
-        oauth_token = session_data.get("oauth_token")
-        oauth_secret = session_data.get("oauth_token_secret")
-        if not (oauth_token and oauth_secret):
-            return JSONResponse({"error": "Not authenticated"}, status_code=401)
-
-        # Use the contacts photos API but filter for this specific nsid
-        contacts_photos = await flickr.fetch_contacts_photos(
-            oauth_token,
-            oauth_secret,
-            count=50,  # Get enough to hopefully find this user's photo
-            single_photo=True,
-            just_friends=True
-        )
-
-        if contacts_photos:
-            for photo in contacts_photos:
-                if photo.get('owner') == nsid:
-                    return JSONResponse(photo)
-
-        return JSONResponse({"error": "No photo found"}, status_code=404)
-    except Exception as e:
-        import logging
-        logging.error(f"Error in /friend_latest_photo/{nsid}: {str(e)}")
-        return JSONResponse(
-            {"error": "Internal server error", "details": str(e)}, status_code=500
-        )
-
-
-from fastapi import Body
-import asyncio
-
-
 @app.post("/friend_latest_photos")
 async def friend_latest_photos(request: Request, nsids: list = Body(...)):
     """
@@ -488,20 +450,20 @@ async def friend_latest_photos(request: Request, nsids: list = Body(...)):
                 session_oauth_secret,
                 count=50,
                 single_photo=True,
-                just_friends=True
+                just_friends=True,
             )
             if contacts_photos is None:
-                return JSONResponse({"error": "Failed to fetch contacts photos"}, status_code=500)
+                return JSONResponse(
+                    {"error": "Failed to fetch contacts photos"}, status_code=500
+                )
             # Cache for 2 hours
             await redis_client.set(
-                cache_key,
-                json.dumps(contacts_photos),
-                ex=REDIS_FRIENDS_CACHE_TTL
+                cache_key, json.dumps(contacts_photos), ex=REDIS_FRIENDS_CACHE_TTL
             )
 
         # Create mapping of nsid to photo
-        photo_map = {photo['owner']: photo for photo in contacts_photos}
-        
+        photo_map = {photo["owner"]: photo for photo in contacts_photos}
+
         # Build response with requested nsids
         out = {}
         for nsid in nsids:
