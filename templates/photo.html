@@ -21,7 +21,17 @@
     const mediumSize = sizesData.find(size => size.width > 800 && size.width <= 1600) || sizesData[0];
     const largeSize = sizesData.find(size => size.width > 1600) || sizesData[0];
     
-    const sizesToLoad = [smallSize, mediumSize, largeSize].filter(Boolean);
+    // Sort all available sizes by width
+    const sortedSizes = [...sizesData].sort((a, b) => a.width - b.width);
+    
+    // Select 5 progressively larger sizes
+    const sizesToLoad = [
+      sortedSizes[0], // Smallest
+      sortedSizes[Math.floor(sortedSizes.length * 0.25)],
+      sortedSizes[Math.floor(sortedSizes.length * 0.5)],
+      sortedSizes[Math.floor(sortedSizes.length * 0.75)],
+      sortedSizes[sortedSizes.length - 1] // Largest
+    ].filter(Boolean);
     
     let current = 0;
     function loadNext() {
@@ -33,15 +43,20 @@
       const nextImg = new window.Image();
       nextImg.src = sizesToLoad[current].source;
       nextImg.onload = function() {
-        img.src = nextImg.src;
-        img.alt = "{{ photo.title._content or photo.title }}";
-        if (current < sizesToLoad.length - 1) {
-          img.style.imageRendering = 'pixelated';
-          setTimeout(loadNext, 300);
-        } else {
-          img.style.imageRendering = 'auto';
-        }
-        current++;
+        // Initial delay only for first image
+        const delay = current === 0 ? 100 : 400;
+        
+        setTimeout(() => {
+          img.src = nextImg.src;
+          img.alt = "{{ photo.title._content or photo.title }}";
+          if (current < sizesToLoad.length - 1) {
+            img.style.imageRendering = 'pixelated';
+            loadNext();
+          } else {
+            img.style.imageRendering = 'auto';
+          }
+          current++;
+        }, delay);
       };
       nextImg.onerror = function() {
         img.alt = "{{ photo.title._content or photo.title }}";
