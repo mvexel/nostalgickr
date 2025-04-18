@@ -173,7 +173,7 @@ class FlickrAPI:
         just_friends: bool = False,
         single_photo: bool = True,
         include_self: bool = False,
-        extras: str = None
+        extras: str = "date_upload,date_taken,owner_name"
     ) -> Optional[list]:
         """
         Fetch recent photos from contacts using flickr.photos.getContactsPhotos.

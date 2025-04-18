@@ -451,6 +451,7 @@ async def friend_latest_photos(request: Request, nsids: list = Body(...)):
                 count=50,
                 single_photo=True,
                 just_friends=True,
+                extras="date_upload,date_taken,owner_name"
             )
             if contacts_photos is None:
                 return JSONResponse(
