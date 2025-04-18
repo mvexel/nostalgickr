@@ -127,8 +127,9 @@ class FlickrAPI:
         oauth_token: str,
         oauth_token_secret: str,
         per_page: int = 20,
+        page: int = 1,
         privacy_filter: int = None,
-    ) -> Optional[list]:
+    ) -> Optional[dict]:
         """
         Fetch the logged-in user's own photos, supporting all privacy levels via flickr.photos.search.
 
@@ -153,9 +154,15 @@ class FlickrAPI:
         }
         if privacy_filter is not None:
             params["privacy_filter"] = privacy_filter
+        params["page"] = page
         resp = oauth.get(self.base_url, params=params)
         if resp.ok:
-            return resp.json().get("photos", {}).get("photo", [])
+            photos_data = resp.json().get("photos", {})
+            return {
+                "photos": photos_data.get("photo", []),
+                "pages": photos_data.get("pages", 1),
+                "total": photos_data.get("total", 0)
+            }
         return None
 
     async def fetch_photo_details(

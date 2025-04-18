@@ -188,14 +188,16 @@ async def index(
             "private": 5,
         }
         privacy_filter = privacy_map.get(privacy)
-        user_photos = await flickr.fetch_own_photos(
+        photos_response = await flickr.fetch_own_photos(
             session_data.get("oauth_token"),
             session_data.get("oauth_token_secret"),
             per_page=20,
+            page=page,
             privacy_filter=privacy_filter,
         )
-        if user_photos is not None:
-            photos = user_photos
+        if photos_response is not None:
+            photos = photos_response.get("photos", [])
+            pages = photos_response.get("pages", 1)
     context = await build_template_context(
         request,
         {
