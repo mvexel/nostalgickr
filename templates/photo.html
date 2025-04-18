@@ -21,17 +21,28 @@
     const mediumSize = sizesData.find(size => size.width > 800 && size.width <= 1600) || sizesData[0];
     const largeSize = sizesData.find(size => size.width > 1600) || sizesData[0];
     
-    // Sort all available sizes by width
-    const sortedSizes = [...sizesData].sort((a, b) => a.width - b.width);
+    // Get final image's aspect ratio
+    const finalSize = sizesData.reduce((a, b) => a.width > b.width ? a : b);
+    const finalAspect = finalSize.width / finalSize.height;
     
-    // Select 5 progressively larger sizes
-    const sizesToLoad = [
-      sortedSizes[0], // Smallest
-      sortedSizes[Math.floor(sortedSizes.length * 0.25)],
-      sortedSizes[Math.floor(sortedSizes.length * 0.5)],
-      sortedSizes[Math.floor(sortedSizes.length * 0.75)],
-      sortedSizes[sortedSizes.length - 1] // Largest
-    ].filter(Boolean);
+    // Filter sizes to only those with matching aspect ratio (±5%)
+    const matchingSizes = sizesData.filter(size => {
+      const aspect = size.width / size.height;
+      return Math.abs(aspect - finalAspect) < (finalAspect * 0.05);
+    });
+    
+    // Sort matching sizes by width
+    const sortedSizes = [...matchingSizes].sort((a, b) => a.width - b.width);
+    
+    // Select 5 progressively larger sizes from matching ones
+    const sizesToLoad = [];
+    if (sortedSizes.length > 0) {
+      sizesToLoad.push(sortedSizes[0]); // Smallest
+      if (sortedSizes.length > 1) sizesToLoad.push(sortedSizes[Math.floor(sortedSizes.length * 0.25)]);
+      if (sortedSizes.length > 2) sizesToLoad.push(sortedSizes[Math.floor(sortedSizes.length * 0.5)]);
+      if (sortedSizes.length > 3) sizesToLoad.push(sortedSizes[Math.floor(sortedSizes.length * 0.75)]);
+      sizesToLoad.push(sortedSizes[sortedSizes.length - 1]); // Largest
+    }
     
     let current = 0;
     function loadNext() {
@@ -64,8 +75,15 @@
       };
     }
     
-    // Start with smallest size
-    loadNext();
+    if (sizesToLoad.length > 0) {
+      // Start with smallest size
+      loadNext();
+    } else {
+      // Fallback - just load the largest size
+      img.src = finalSize.source;
+      img.alt = "{{ photo.title._content or photo.title }}";
+      img.style.imageRendering = 'auto';
+    }
   }
 </script>
 <div class="photo-detail-page">
