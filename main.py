@@ -100,6 +100,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 
+
 def datetimeformat(value):
     """
     Format a Unix timestamp or date string into a friendly display:
@@ -421,6 +422,48 @@ async def friends_photos(request: Request):
         },
     )
     resp = templates.TemplateResponse("friends.html", context)
+    resp.set_cookie(SESSION_COOKIE, session_id, httponly=True)
+    return resp
+
+@app.get("/groups", response_class=HTMLResponse)
+async def groups_page(request: Request):
+    session_id = await get_session_id(request)
+    session_data = await get_session_data(session_id)
+    if not (session_data.get("oauth_token") and session_data.get("oauth_token_secret")):
+        resp = RedirectResponse("/login")
+        resp.set_cookie(SESSION_COOKIE, session_id, httponly=True)
+        return resp
+
+    # Get user NSID (from session or fetch)
+    user_nsid = session_data.get("user_nsid")
+    if not user_nsid:
+        user_info = await flickr.fetch_user_info(
+            session_data.get("oauth_token"), session_data.get("oauth_token_secret")
+        )
+        user_nsid = user_info.get("id") if user_info else None
+        if user_nsid:
+            session_data["user_nsid"] = user_nsid
+            await set_session_data(session_id, session_data)
+    if not user_nsid:
+        resp = RedirectResponse("/login")
+        resp.set_cookie(SESSION_COOKIE, session_id, httponly=True)
+        return resp
+
+    groups = await flickr.fetch_user_groups(
+        session_data.get("oauth_token"),
+        session_data.get("oauth_token_secret"),
+        user_nsid,
+        extras="privacy,throttle,restrictions"
+    )
+    if groups is None:
+        groups = []
+    context = await build_template_context(
+        request,
+        {
+            "groups": groups,
+        },
+    )
+    resp = templates.TemplateResponse("groups.html", context)
     resp.set_cookie(SESSION_COOKIE, session_id, httponly=True)
     return resp
 

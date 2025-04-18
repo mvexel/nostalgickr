@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block nav_extra %}
+<a href="/">&laquo; Back to Photo Stream</a>
+{% endblock %}
+
+{% block content %}
+<h2>Your Flickr Groups</h2>
+{% if groups %}
+  <ul class="photo-list">
+    {% for group in groups %}
+    <li class="photo-row">
+      <a href="https://www.flickr.com/groups/{{ group.nsid }}/" target="_blank">
+        {% if group.iconfarm|int > 0 and group.iconserver|int > 0 %}
+          <img src="https://farm{{ group.iconfarm }}.staticflickr.com/{{ group.iconserver }}/buddyicons/{{ group.nsid }}.jpg" alt="{{ group.name }} icon" width="110" height="110" class="friend-thumb">
+        {% else %}
+          <img src="https://www.flickr.com/images/buddyicon.gif" alt="Default group icon" width="110" height="110" class="friend-thumb">
+        {% endif %}
+      </a>
+      <div class="photo-main">
+        <div class="photo-title">
+          <a href="https://www.flickr.com/groups/{{ group.nsid }}/" target="_blank">{{ group.name }}</a>
+        </div>
+        {% if group.description and group.description._content %}
+        <div class="photo-desc">{{ group.description._content | safe }}</div>
+        {% endif %}
+        <div class="photo-meta">
+          <span>Members: {{ group.members }}</span><br />
+          <span>Photos: {{ group.pool_count }}</span><br />
+          {% if group.admin %}
+            <span><strong>You are an admin</strong></span><br />
+          {% endif %}
+        </div>
+      </div>
+      <div class="photo-extra"></div>
+    </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <div class="no-photos">You are not a member of any groups.</div>
+{% endif %}
+{% endblock %}

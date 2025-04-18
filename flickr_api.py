@@ -3,7 +3,6 @@ from requests_oauthlib import OAuth1Session
 
 # Utility functions for interacting with the Flickr API
 
-
 class FlickrAPI:
     """
     Wrapper for interacting with the Flickr REST API using OAuth authentication.
@@ -14,6 +13,35 @@ class FlickrAPI:
         self.api_key = api_key
         self.api_secret = api_secret
         self.base_url = "https://api.flickr.com/services/rest"
+
+    async def fetch_user_groups(self, oauth_token: str, oauth_token_secret: str, user_id: str, extras: str = None) -> Optional[list]:
+        """
+        Fetch the groups the authenticated user is a member of using flickr.people.getGroups.
+
+        Args:
+            oauth_token (str): OAuth token.
+            oauth_token_secret (str): OAuth token secret.
+            user_id (str): The NSID of the user to fetch groups for.
+            extras (str, optional): Comma-delimited extra info fields (e.g. 'privacy,throttle,restrictions').
+
+        Returns:
+            Optional[list]: List of group dictionaries if successful, else None.
+        """
+        oauth = self.get_oauth_session(oauth_token, oauth_token_secret)
+        params = {
+            "method": "flickr.people.getGroups",
+            "format": "json",
+            "nojsoncallback": 1,
+            "api_key": self.api_key,
+            "user_id": user_id,
+        }
+        if extras:
+            params["extras"] = extras
+        resp = oauth.get(self.base_url, params=params)
+        if resp.ok:
+            data = resp.json().get("groups", {})
+            return data.get("group", [])
+        return None
 
     def get_oauth_session(
         self, oauth_token: str, oauth_token_secret: str, verifier: Optional[str] = None
