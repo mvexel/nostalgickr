@@ -165,6 +165,49 @@ class FlickrAPI:
             }
         return None
 
+    async def fetch_contacts_photos(
+        self,
+        oauth_token: str,
+        oauth_token_secret: str,
+        count: int = 50,
+        just_friends: bool = False,
+        single_photo: bool = True,
+        include_self: bool = False,
+        extras: str = None
+    ) -> Optional[list]:
+        """
+        Fetch recent photos from contacts using flickr.photos.getContactsPhotos.
+
+        Args:
+            oauth_token (str): OAuth token.
+            oauth_token_secret (str): OAuth token secret.
+            count (int): Number of photos to return (default: 50, max: 50).
+            just_friends (bool): Only show photos from friends and family (default: False).
+            single_photo (bool): Only fetch one photo per contact (default: True).
+            include_self (bool): Include photos from the calling user (default: False).
+            extras (str): Comma-delimited extra fields to fetch.
+
+        Returns:
+            Optional[list]: List of photo dictionaries if successful, else None.
+        """
+        oauth = self.get_oauth_session(oauth_token, oauth_token_secret)
+        params = {
+            "method": "flickr.photos.getContactsPhotos",
+            "count": count,
+            "just_friends": int(just_friends),
+            "single_photo": int(single_photo),
+            "include_self": int(include_self),
+            "format": "json",
+            "nojsoncallback": 1,
+        }
+        if extras:
+            params["extras"] = extras
+            
+        resp = oauth.get(self.base_url, params=params)
+        if resp.ok:
+            return resp.json().get("photos", {}).get("photo", [])
+        return None
+
     async def fetch_photo_details(
         self, oauth_token: str, oauth_token_secret: str, photo_id: str
     ) -> Optional[dict]:
