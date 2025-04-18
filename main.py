@@ -308,7 +308,7 @@ async def photo_page(request: Request, photo_id: str):
     if sizes_resp.status_code == 200:
         sizes_data = sizes_resp.json().get("sizes", {}).get("size", [])
         # Sort by width descending
-        sizes_data.sort(key=lambda x: int(x.get('width', 0)), reverse=True)
+        sizes_data.sort(key=lambda x: int(x.get("width", 0)), reverse=True)
     # Get user display name if logged in
     user_display_name = None
     if logged_in:
