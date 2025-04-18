@@ -50,16 +50,21 @@ class FlickrAPI:
         Returns:
             Optional[Dict[str, Any]]: User info dictionary if successful, else None.
         """
-        oauth = self.get_oauth_session(oauth_token, oauth_token_secret)
-        params = {
-            "method": "flickr.test.login",
-            "format": "json",
-            "nojsoncallback": 1,
-        }
-        resp = oauth.get(self.base_url, params=params)
-        if resp.ok:
-            return resp.json().get("user", {})
-        return None
+        try:
+            oauth = self.get_oauth_session(oauth_token, oauth_token_secret)
+            params = {
+                "method": "flickr.test.login",
+                "format": "json",
+                "nojsoncallback": 1,
+            }
+            resp = oauth.get(self.base_url, params=params)
+            if resp.ok:
+                return resp.json().get("user", {})
+            return None
+        except Exception as e:
+            import logging
+            logging.error(f"Failed to fetch user info: {str(e)}")
+            return None
 
     async def fetch_contacts(
         self, oauth_token: str, oauth_token_secret: str
