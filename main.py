@@ -100,7 +100,6 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 
-
 def datetimeformat(value):
     """
     Format a Unix timestamp or date string into a friendly display:
@@ -136,7 +135,7 @@ def datetimeformat(value):
 
 templates.env.filters["datetimeformat"] = datetimeformat
 
-# Load secrets from environment variables (user must set these)
+# Load secrets from environment variables
 config = Config(".env")
 FLICKR_API_KEY = config("FLICKR_API_KEY", cast=str, default="YOUR_FLICKR_API_KEY")
 FLICKR_API_SECRET = config(
@@ -157,7 +156,6 @@ REQUEST_TOKEN_URL = "https://www.flickr.com/services/oauth/request_token"
 AUTHORIZE_URL = "https://www.flickr.com/services/oauth/authorize"
 ACCESS_TOKEN_URL = "https://www.flickr.com/services/oauth/access_token"
 
-# Instantiate FlickrAPI utility
 flickr = FlickrAPI(FLICKR_API_KEY, FLICKR_API_SECRET)
 
 
@@ -256,7 +254,6 @@ async def photo_details(request: Request, photo_id: str):
         "comments": comments,
         "description": description,
     }
-    # Cache the result for 2 days
     await redis_client.set(
         cache_key, json.dumps(result), ex=REDIS_PHOTO_DETAILS_CACHE_TTL
     )
@@ -327,7 +324,6 @@ async def photo_page(request: Request, photo_id: str):
         sizes_data = sizes_resp.json().get("sizes", {}).get("size", [])
         # Sort by width descending
         sizes_data.sort(key=lambda x: int(x.get("width", 0)), reverse=True)
-    # Get user display name if logged in
     user_display_name = None
     if logged_in:
         user_info = await flickr.fetch_user_info(
@@ -425,6 +421,7 @@ async def friends_photos(request: Request):
     resp.set_cookie(SESSION_COOKIE, session_id, httponly=True)
     return resp
 
+
 @app.get("/groups", response_class=HTMLResponse)
 async def groups_page(request: Request):
     session_id = await get_session_id(request)
@@ -453,15 +450,16 @@ async def groups_page(request: Request):
         session_data.get("oauth_token"),
         session_data.get("oauth_token_secret"),
         user_nsid,
-        extras="privacy,throttle,restrictions"
+        extras="privacy,throttle,restrictions",
     )
     if groups is None:
         groups = []
     # Decode HTML entities in group names
     import html
+
     for group in groups:
-        if 'name' in group:
-            group['name'] = html.unescape(group['name'])
+        if "name" in group:
+            group["name"] = html.unescape(group["name"])
     context = await build_template_context(
         request,
         {
@@ -479,10 +477,6 @@ async def friend_latest_photos(request: Request, nsids: list = Body(...)):
     Fetch latest photos for a list of friends using contacts photos API.
     Uses Redis cache for better performance.
     Returns basic photo info without sizes (those are fetched separately).
-    """
-    """
-    Fetch latest photos for a list of friends using contacts photos API.
-    Uses Redis cache for better performance.
     """
     session_id = await get_session_id(request)
     session_data = await get_session_data(session_id)
@@ -515,10 +509,8 @@ async def friend_latest_photos(request: Request, nsids: list = Body(...)):
                 cache_key, json.dumps(contacts_photos), ex=REDIS_FRIENDS_CACHE_TTL
             )
 
-        # Create mapping of nsid to photo
         photo_map = {photo["owner"]: photo for photo in contacts_photos}
 
-        # Build response with requested nsids, maintaining original order
         out = {}
         for nsid in nsids:
             if nsid in photo_map:
