@@ -4,9 +4,15 @@ from requests_oauthlib import OAuth1Session
 # Utility functions for interacting with the Flickr API
 
 class FlickrAPI:
-    """
-    Wrapper for interacting with the Flickr REST API using OAuth authentication.
+    """Wrapper for interacting with the Flickr REST API using OAuth authentication.
+
     Provides methods for fetching user info, contacts, photos, and photo details.
+    All methods require valid OAuth tokens for authenticated requests.
+
+    Attributes:
+        api_key (str): Flickr API key
+        api_secret (str): Flickr API secret
+        base_url (str): Base URL for Flickr API endpoints
     """
 
     def __init__(self, api_key: str, api_secret: str):
@@ -14,18 +20,35 @@ class FlickrAPI:
         self.api_secret = api_secret
         self.base_url = "https://api.flickr.com/services/rest"
 
-    async def fetch_user_groups(self, oauth_token: str, oauth_token_secret: str, user_id: str, extras: str = None) -> Optional[list]:
-        """
-        Fetch the groups the authenticated user is a member of using flickr.people.getGroups.
+    async def fetch_user_groups(
+        self,
+        oauth_token: str,
+        oauth_token_secret: str,
+        user_id: str,
+        extras: str = None
+    ) -> Optional[list]:
+        """Fetch the groups the authenticated user is a member of.
+
+        Uses flickr.people.getGroups API endpoint.
 
         Args:
-            oauth_token (str): OAuth token.
-            oauth_token_secret (str): OAuth token secret.
-            user_id (str): The NSID of the user to fetch groups for.
-            extras (str, optional): Comma-delimited extra info fields (e.g. 'privacy,throttle,restrictions').
+            oauth_token: Valid OAuth token for authentication
+            oauth_token_secret: Valid OAuth token secret
+            user_id: Flickr NSID of the user to fetch groups for
+            extras: Optional comma-delimited extra fields to include.
+                Common values: 'privacy,throttle,restrictions'
 
         Returns:
-            Optional[list]: List of group dictionaries if successful, else None.
+            List of group dictionaries if successful, None on failure.
+            Each group dict contains:
+                - nsid: Group ID
+                - name: Group name
+                - members: Count of members
+                - privacy: Group privacy level
+                - other fields depending on extras requested
+
+        Raises:
+            None: Errors are caught and logged, returns None on failure
         """
         oauth = self.get_oauth_session(oauth_token, oauth_token_secret)
         params = {
@@ -44,18 +67,23 @@ class FlickrAPI:
         return None
 
     def get_oauth_session(
-        self, oauth_token: str, oauth_token_secret: str, verifier: Optional[str] = None
-    ):
-        """
-        Create an OAuth1Session for authenticated requests to the Flickr API.
+        self,
+        oauth_token: str,
+        oauth_token_secret: str,
+        verifier: Optional[str] = None
+    ) -> OAuth1Session:
+        """Create an authenticated OAuth1Session for Flickr API requests.
 
         Args:
-            oauth_token (str): OAuth token.
-            oauth_token_secret (str): OAuth token secret.
-            verifier (Optional[str]): OAuth verifier (optional, for token exchange).
+            oauth_token: Valid OAuth token
+            oauth_token_secret: Valid OAuth token secret
+            verifier: OAuth verifier string (only needed during token exchange)
 
         Returns:
-            OAuth1Session: Authenticated session for Flickr API requests.
+            Configured OAuth1Session instance ready for API requests
+
+        Raises:
+            None: This is a simple wrapper that shouldn't raise exceptions
         """
         return OAuth1Session(
             self.api_key,
