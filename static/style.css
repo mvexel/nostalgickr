@@ -167,6 +167,27 @@ label {
     color: #333;
 }
 
+.no-photos {
+    background: #f8f9fa;
+    border: 1px solid #e1e4e8;
+    border-radius: 6px;
+    padding: 24px;
+    margin: 20px 0;
+    text-align: center;
+    color: #586069;
+}
+
+.no-photos a {
+    color: #0366d6;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.no-photos a:hover {
+    text-decoration: underline;
+    color: #ff0084;
+}
+
 .pagination {
     margin-top: 20px;
     text-align: center;
