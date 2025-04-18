@@ -6,42 +6,46 @@
 {% endblock %}
 {% block content %}
 <div class="photo-image" style="position:relative; width:100%; max-width:800px; aspect-ratio: 4/3; margin:auto; background: repeating-conic-gradient(#eee 0% 25%, #ddd 0% 50%) 50% / 32px 32px; display:flex; align-items:center; justify-content:center;">
-  <img id="progressive-photo" src="{{ image_urls[0] if image_urls else image_url }}" alt="{{ photo.title._content or photo.title }}" style="width:100%; height:100%; object-fit:contain; image-rendering: pixelated; transition: image-rendering 0.6s; background:#fafafd;">
+  <img id="progressive-photo" src="" alt="{{ photo.title._content or photo.title }}" style="width:100%; height:100%; object-fit:contain; image-rendering: pixelated; transition: image-rendering 0.6s; background:#fafafd;">
 </div>
 <script>
-  const imageUrls = {{ image_urls| tojson | safe }};
-  if (!Array.isArray(imageUrls)) {
-    imageUrls = [imageUrls];
-  }
+  const sizesData = {{ sizes_data| tojson | safe }};
   const img = document.getElementById('progressive-photo');
-  if (imageUrls.length > 1) {
+  
+  if (sizesData && sizesData.length) {
+    // Get viewport width
+    const viewportWidth = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+    
+    // Select 3 sizes - small, medium, large based on viewport
+    const smallSize = sizesData.find(size => size.width <= 800) || sizesData[sizesData.length - 1];
+    const mediumSize = sizesData.find(size => size.width > 800 && size.width <= 1600) || sizesData[0];
+    const largeSize = sizesData.find(size => size.width > 1600) || sizesData[0];
+    
+    const sizesToLoad = [smallSize, mediumSize, largeSize].filter(Boolean);
+    
     let current = 0;
     function loadNext() {
-      current++;
-      if (current >= imageUrls.length) {
-        img.style.filter = 'none';
+      if (current >= sizesToLoad.length) {
+        img.style.imageRendering = 'auto';
         return;
       }
+      
       const nextImg = new window.Image();
-      nextImg.src = imageUrls[current];
-      nextImg.onload = function () {
+      nextImg.src = sizesToLoad[current].source;
+      nextImg.onload = function() {
         img.src = nextImg.src;
-        if (current === imageUrls.length - 1) {
-          img.style.imageRendering = 'auto';
-          img.style.filter = 'none';
-        } else {
+        if (current < sizesToLoad.length - 1) {
           img.style.imageRendering = 'pixelated';
-          img.style.filter = 'none';
+          setTimeout(loadNext, 300);
+        } else {
+          img.style.imageRendering = 'auto';
         }
-        setTimeout(loadNext, 300); // Wait a bit, then load the next quality
+        current++;
       };
     }
-    img.onload = function () {
-      // Only start progressive load if the initial image is loaded
-      setTimeout(loadNext, 400);
-    }
-  } else {
-    img.style.filter = 'none';
+    
+    // Start with smallest size
+    loadNext();
   }
 </script>
 <div class="photo-detail-page">

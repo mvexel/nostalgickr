@@ -307,13 +307,8 @@ async def photo_page(request: Request, photo_id: str):
     image_urls = []
     if sizes_resp.status_code == 200:
         sizes_data = sizes_resp.json().get("sizes", {}).get("size", [])
-        # Prefer order: Original, Large, Medium 800, Medium 640, Medium, Small
-        preferred = ["Original", "Large", "Medium 800", "Medium 640", "Medium", "Small"]
-        for label in preferred:
-            for size in sizes_data:
-                if size.get("label") == label:
-                    image_urls.append(size.get("source"))
-                    break
+        # Sort by width descending
+        sizes_data.sort(key=lambda x: int(x.get('width', 0)), reverse=True)
     # Get user display name if logged in
     user_display_name = None
     if logged_in:
@@ -326,7 +321,7 @@ async def photo_page(request: Request, photo_id: str):
         request,
         {
             "photo": data,
-            "image_urls": image_urls,
+            "sizes_data": sizes_data,
             "user_display_name": user_display_name,
         },
     )
